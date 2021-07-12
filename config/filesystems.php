@@ -35,10 +35,15 @@ return [
             'root' => storage_path('app'),
         ],
 
+        'js_view' => [
+            'driver' => 'local',
+            'root' => base_path('resources/js/Pages') //"/Users/apple/Sites/cms_documentation/../docs-api-laron/src/data/v1",
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => env('APP_URL').'/storage',
+            'url' => env('APP_URL') . '/storage',
             'visibility' => 'public',
         ],
 

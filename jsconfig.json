@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            "@shared/*": [
+                "./resources/js/Shared/*"
+            ],
+            "@pages/*": [
+                "./resources/js/Pages/*"
+            ],
+            "@lang/*": [
+                "./resources/js/Lang/*"
+            ],
+            "@rules/*": [
+                "./resources/js/Rules/*"
+            ],
+        }
+    },
+    "exclude": [
+        "node_modules",
+        "dist"
+    ]
+}

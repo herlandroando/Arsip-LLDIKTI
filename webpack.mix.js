@@ -1,4 +1,7 @@
 const mix = require('laravel-mix');
+// require('laravel-mix-alias');
+const path = require('path');
+
 
 /*
  |--------------------------------------------------------------------------
@@ -11,7 +14,19 @@ const mix = require('laravel-mix');
  |
  */
 
-mix.js('resources/js/app.js', 'public/js')
-    .postCss('resources/css/app.css', 'public/css', [
+mix.js('resources/js/app.js', 'public/js').webpackConfig({
+    resolve: {
+        alias: {
+            '@lang': path.resolve(__dirname,'resources/js/Lang'),
+            '@shared': path.resolve(__dirname,'resources/js/Shared'),
+            '@pages': path.resolve(__dirname,'resources/js/Pages'),
+            '@rules': path.resolve(__dirname,'resources/js/Rules'),
+        }
+    }
+})
+    .vue()
+    .postCss('resources/css/index.css', 'public/css/index.css', [
         //
-    ]);
+    ]).
+    postCss('resources/css/app.css', 'public/css/app.css', [])
+    ;
