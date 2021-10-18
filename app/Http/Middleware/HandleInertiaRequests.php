@@ -37,11 +37,23 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request)
     {
+        $user_result = [];
         $version_timestamp = PengaturanUmum::where("nama", "update_terakhir")->first();
-        $settings = PengaturanUmum::where("nama","!=", "update_terakhir")->get()->makeHidden("id");
+        $settings = PengaturanUmum::where("nama", "!=", "update_terakhir")->get()->makeHidden("id");
+        $user = $request->user();
+        if (!empty($user)) {
+            $user_result = [
+                "id" => $user->id,
+                "nama" => $user->nama,
+                "username" => $user->username,
+                "jabatan" => $user->jabatan->nama,
+                "ijin" => $user->jabatan->ijin,
+            ];
+        }
         return array_merge(parent::share($request), [
             "_last_updated" => $version_timestamp->nilai ?? null,
-            "_settings" => $settings
+            "_settings" => $settings,
+            "_user" => empty($user_result) ? "" : $user_result,
         ]);
     }
 }

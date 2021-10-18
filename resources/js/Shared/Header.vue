@@ -22,7 +22,9 @@
       </el-row>
     </el-col>
     <el-col :offset="9" :span="6" class="" style="text-align: right">
-      <span style="font-size: 14px"> Logout</span></el-col
+      <Link :href="routes('logout')" >
+        <span style="font-size: 14px"> Logout</span>
+      </Link></el-col
     >
   </el-row>
   <el-row
@@ -47,14 +49,13 @@
             ></i
           ></el-button>
         </el-col>
-
         <el-col
           class="search-input"
-          v-if="hasHeaderSearch && isMobile()"
+          v-if="hasHeaderSearch && useMq().mdMinus"
           :span="17"
         >
-          <form class="search-form">
-            <input type="search" placeholder="Search" />
+          <form @submit.prevent="handleSearch" class="search-form">
+            <input v-model="search" type="search" placeholder="Search" />
           </form>
         </el-col>
         <el-col :span="1"></el-col>
@@ -64,9 +65,13 @@
 </template>
 
 <script>
-import { ref } from "@vue/reactivity";
+import { computed, ref } from "@vue/reactivity";
 import { inject } from "@vue/runtime-core";
+import { useMq } from "vue3-mq";
+import { Link } from "@inertiajs/inertia-vue3";
+
 export default {
+  components: { Link },
   emits: ["handleSidebar", "handleSearch"],
   props: {
     isActiveSidebar: { type: Boolean, default: false },
@@ -90,6 +95,7 @@ export default {
       stateOpenSidebar,
       handleSearch,
       search,
+      useMq,
     };
   },
 };

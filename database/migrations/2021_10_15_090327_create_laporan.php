@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class Profil extends Migration
+class CreateLaporan extends Migration
 {
     /**
      * Run the migrations.
@@ -13,14 +13,12 @@ class Profil extends Migration
      */
     public function up()
     {
-        Schema::create('profil', function (Blueprint $table) {
+        Schema::create('laporan', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('id_jabatan');
-            $table->string('nama', 255);
-            $table->string('nip', 18)->nullable();
-            $table->string('no_telpon')->nullable();
+            $table->string("type", 30)->nullable();
+            $table->string("routine_type", 30)->nullable();
+            $table->string("path", 255)->nullable();
             $table->timestamps();
-            $table->foreign('id_jabatan')->references('id')->on('jabatan')->restrictOnDelete();
         });
     }
 
@@ -31,6 +29,6 @@ class Profil extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('profil');
+        Schema::dropIfExists('laporan');
     }
 }

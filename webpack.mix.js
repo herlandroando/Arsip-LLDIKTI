@@ -29,4 +29,6 @@ mix.js('resources/js/app.js', 'public/js').webpackConfig({
         //
     ]).
     postCss('resources/css/app.css', 'public/css/app.css', [])
+    // .sass('resources/sass/app.scss','public/css/test.css')
     ;
+//

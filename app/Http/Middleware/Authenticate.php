@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Controllers\Toast;
 use Illuminate\Auth\Middleware\Authenticate as Middleware;
 
 class Authenticate extends Middleware
@@ -14,7 +15,9 @@ class Authenticate extends Middleware
      */
     protected function redirectTo($request)
     {
-        if (! $request->expectsJson()) {
+        if (!$request->expectsJson()) {
+            $toast = new Toast(Toast::ERROR, "Tidak Diijinkan", "Anda belum masuk sebagai pengguna!");
+            $request->session()->flash("_toast", $toast->toArray());
             return route('login');
         }
     }

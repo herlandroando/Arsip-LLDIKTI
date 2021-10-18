@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Jabatan;
+use Disposisi;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -15,21 +16,24 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
-        DB::table('pengguna')->insert([
-            'username' => 'collins.dion',
-            'password' => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
-            'remember_token' => \Illuminate\Support\Str::random(10),
+        DB::table('pengaturan_umum')->insert([
+            ["nama"=>"retensi","nilai"=>"2"],
+            ["nama"=>"delete_mail_not_permanent","nilai"=>"true"],
+            ["nama"=>"auto_delete_retensi_mail","nilai"=>"false"],
+            ["nama"=>"expiration_time_retensi_mail","nilai"=>"0"],
         ]);
-        \App\Models\User::factory(4)->create();
+
         DB::table('ijin')->insert([
             "nama" => "Admin",
             "r_laporan" => 1,
             "r_surat" => 1,
+            "r_all_disposisi"=>1,
             "d_surat" => 1,
             "d_miliksurat" => 1,
             "dp_surat" => 1,
             "w_disposisi" => 1,
-            "w_surat" => 1,
+            "w_suratmasuk" => 1,
+            "w_suratkeluar" => 1,
             "admin" => 1
         ]);
         DB::table('jabatan')->insert([
@@ -52,10 +56,12 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->call([
+            UserSeeder::class,
             SifatSuratSeeder::class,
             SuratKeluarSeeder::class,
             SuratMasukSeeder::class,
-            TembusanSeeder::class,
+            DisposisiSeeder::class
+            // TembusanSeeder::class,
         ]);
     }
 }

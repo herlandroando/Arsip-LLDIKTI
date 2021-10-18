@@ -14,7 +14,7 @@ class SifatSuratSeeder extends Seeder
      */
     public function run()
     {
-        $values = ['Biasa', 'Segera', 'Penting', 'Rahasia'];
+        $values = ['Rahasia', 'Biasa', 'Rutin'];
         foreach ($values as $value) {
             SifatSurat::create(['nama' => $value]);
         }

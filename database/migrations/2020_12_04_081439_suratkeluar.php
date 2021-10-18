@@ -27,6 +27,7 @@ class Suratkeluar extends Migration
             $table->string('alamat', 255)->nullable();
             $table->string('isi_ringkas', 500)->nullable();
             $table->softDeletes();
+            $table->dateTime("local_created_at")->nullable();
             $table->timestamps();
 
             $table->foreign('asal_surat')->references('id')->on('jabatan')->nullOnDelete();

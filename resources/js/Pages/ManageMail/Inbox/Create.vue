@@ -226,7 +226,7 @@ export default {
           },
           onSuccess: (page) => {
             console.log("success visit", page);
-            form.value.resetFields();
+            if (props._toast.type == "success") form.value.resetFields();
           },
           onError: (errors) => {
             console.log("error visit", errors);

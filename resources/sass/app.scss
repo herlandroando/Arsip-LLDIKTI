@@ -1,0 +1,16 @@
+@forward "../../node_modules/element-plus/theme-chalk/src/common/var.scss" with (
+  $colors: (
+    "primary": (
+      "base": #0c4b8e,
+    ),
+  ),
+);
+@import '../../node_modules/element-plus/theme-chalk/src/index';
+@import '../../node_modules/element-plus/theme-chalk/display.css';
+
+// $--color-primary: #0c4b8e; /* icon font path, required */
+// $--font-path: '../../node_modules/element-plus/lib/theme-chalk/fonts';
+
+
+// @import "../../node_modules/element-plus/theme-chalk/src/index";
+

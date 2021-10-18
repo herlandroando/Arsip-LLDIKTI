@@ -4,10 +4,15 @@
       <el-col :span="24" :sm="12">
         <el-card class="box-card">
           <el-row>
-            <el-col :span="16">
+            <el-col :span="24" :md="12" :lg="14">
               <h4>Data Surat</h4>
             </el-col>
-            <el-col :span="8">
+            <el-col
+              :span="24"
+              :md="{span:12,push:2}"
+              :lg="{span:10,push:2}"
+              style="margin-bottom: 20px"
+            >
               <el-button-group>
                 <el-tooltip content="Ubah Surat" placement="top" effect="light">
                   <el-button
@@ -305,9 +310,13 @@ export default {
     });
 
     onMounted(() => {
+      initData();
+    });
+
+    function initData(withFile = true) {
       if (!_.isEmpty(props.detailData)) {
         let data = props.detailData;
-        console.log("data from server",data);
+        console.log("data from server", data);
         formData.id = data.id;
         formData.perihal = data.perihal;
         formData.tanggal_surat = data.tanggal_surat;
@@ -316,21 +325,26 @@ export default {
         formData.asal_surat = data.asal_surat;
         formData.isi_ringkas = data.isi_ringkas;
         formData.id_sifat = data.id_sifat;
-        optionalData.file_surat = _.isEmpty(data.file_surat)
-          ? false
-          : data.file_surat;
-        fileSurat.value = _.isEmpty(data.file_surat_form)
-          ? []
-          : data.file_surat_form;
+        if (withFile) {
+          optionalData.file_surat = _.isEmpty(data.file_surat)
+            ? false
+            : data.file_surat;
+          fileSurat.value = _.isEmpty(data.file_surat_form)
+            ? []
+            : data.file_surat_form;
+        }
         optionalData.pembuat = data.pembuat;
         optionalData.sifat = data.sifat;
         optionalData.dibuat_tanggal = data.dibuat_tanggal;
         // formData.dibuat_tanggal = data.dibuat_tanggal;
       }
-    });
+    }
 
     function handleToggleEdit() {
       editMode.value = !editMode.value;
+      if (!editMode.value) {
+        initData(false);
+      }
     }
 
     async function handleSubmitForm() {
@@ -491,7 +505,8 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
+
 .box-card {
   margin: 30px 0;
 }

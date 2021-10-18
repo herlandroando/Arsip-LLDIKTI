@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\ForbiddenSendedDataException;
+use App\Exceptions\RenderException;
 use App\Models\Jabatan;
 use App\Models\SifatSurat;
 use Exception;
@@ -23,38 +24,41 @@ class Controller extends BaseController
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
 
-    private $sidebar = [
+    public $sidebar = [
         "dashboard" => [
-            "index" => "0", "icon" => "el-icon-odometer",  "label" => "Dashboard", "has_child" => false, "url" => "home"
+            "index" => "0", "icon" => "el-icon-odometer", "permission" => [],  "label" => "Dashboard", "has_child" => false, "url" => "home"
         ],
         "manage_mail" => [
-            "index" => "1", "icon" => "el-icon-message", "label" => "Kelola Surat", "has_child" => true, "childs" => [
+            "index" => "1", "icon" => "el-icon-message", "permission" => ["r_surat"], "label" => "Kelola Surat", "has_child" => true, "childs" => [
                 "inbox" => ["index" => "1-1", "label" => "Surat Masuk", "url" => "manage.inbox.index"],
                 "send" => ["index" => "1-2", "label" => "Surat Keluar", "url" => "manage.send.index"],
-                "disposisi" => ["index" => "1-4", "label" => "Disposisi", "url" => "manage.send.disposisi"],
+                "disposisi" => ["index" => "1-4", "label" => "Disposisi", "url" => "manage.disposisi.index"],
             ]
         ],
         "report_mail" => [
-            "index" => "2", "icon" => "el-icon-document",  "label" => "Laporan Arsip", "has_child" => true, "childs" => [
-                "inbox" => ["index" => "2-1", "label" => "Surat Masuk", "url" => "report.inbox.index"],
-                "send" => ["index" => "2-2", "label" => "Surat Keluar", "url" => "report.send.index"],
-            ]
+            "index" => "2", "icon" => "el-icon-document", "permission" => ["r_laporan"],  "label" => "Laporan Arsip", "has_child" => false, "url" => "report.index"
         ],
-        "recycle_bin" => ["index" => "3", "icon" => "el-icon-delete",  "label" => "Tempat Sampah", "has_child" => false, "url" => "recycle.index"],
+        "recycle" => ["index" => "3", "icon" => "el-icon-delete", "permission" => ["dp_surat"],  "label" => "Tempat Sampah", "has_child" => true, "childs" =>[
+            "inbox" => ["index" => "3-1", "label" => "Surat Masuk", "url" => "recycle.inbox.index"],
+            "send" => ["index" => "3-2", "label" => "Surat Keluar", "url" => "recycle.send.index"],
+        ]],
         "setting" => [
-            "index" => "4", "icon" => "el-icon-setting",  "label" => "Pengaturan", "has_child" => true, "childs" => [
-                "employee" => ["index" => "4-1", "label" => "Data Pegawai", "url" => "setting.employee.index"],
+            "index" => "4", "icon" => "el-icon-setting", "permission" => ["admin"], "label" => "Pengaturan", "has_child" => true, "childs" => [
+                "users" => ["index" => "4-1", "label" => "Data Pengguna", "url" => "setting.users.index"],
                 "permission" => ["index" => "4-2", "label" => "Perizinan", "url" => "setting.permission.index"],
-                "advanced" => ["index" => "4-3", "label" => "Pengaturan Lanjutan", "url" => "setting.advanced.index"],
+                "jabatan" => ["index" => "4-3", "label" => "Jabatan", "url" => "setting.jabatan.index"],
+                "advance" => ["index" => "4-4", "label" => "Pengaturan Lanjutan", "url" => "setting.advance.index"],
             ]
         ],
     ];
 
+    private $limitPagination = 10;
     private $toast_config = null;
     private $index_active = null;
     private $utility_config = null;
     private $sended_data;
     private $title = "";
+    private $show_title = true;
     private $back_option = [];
     // private $breadcrumb = "";
 
@@ -97,7 +101,7 @@ class Controller extends BaseController
             $index = $parent["index"];
         }
         if ($is_null) {
-            throw new Exception("Key was not found on index sidebar that was defined.");
+            $this->throwOrRedirect("Key was not found on index sidebar that was defined.", 500);
         }
         $this->index_active = $index;
         // dd($index);
@@ -124,6 +128,11 @@ class Controller extends BaseController
         $this->title = $title;
         $this->back_option["has_back"] = $has_back;
         $this->back_option["url_back"] = $url_back;
+    }
+
+    public function showTitle(bool $state)
+    {
+        $this->show_title = $state;
     }
 
     // /**
@@ -162,6 +171,11 @@ class Controller extends BaseController
         }
     }
 
+    public function getSendedData()
+    {
+        return $this->sended_data;
+    }
+
     public function addData(string $key, $value)
     {
         $this->validateKey($key);
@@ -185,7 +199,7 @@ class Controller extends BaseController
         $redirect =  redirect($url);
         if (!empty($toast)) {
             if (!($toast instanceof Toast)) {
-                throw new Exception("Redirect toast must be instance of App\Http\Controllers\Toast");
+                $this->throwOrRedirect("Redirect toast must be instance of App\Http\Controllers\Toast", 500);
             }
             $redirect = $redirect->with(["_toast" => $toast->toArray()]);
         }
@@ -205,15 +219,16 @@ class Controller extends BaseController
     {
         $this->pagination = true;
         $pagination = [
-            "total" => 0,
-            "lastPage" => 0,
-            "perPage" => 0,
-            "currentPage" => 0,
+            "total"         => 0,
+            "limit"         => $this->limitPagination,
+            "lastPage"      => 0,
+            "perPage"       => 0,
+            "currentPage"   => 0,
         ];
-        $pagination["total"] = $entity->total();
-        $pagination["lastPage"] = $entity->lastPage();
-        $pagination["perPage"] = $entity->perPage();
-        $pagination["currentPage"] = $entity->currentPage();
+        $pagination["total"]        = $entity->total();
+        $pagination["lastPage"]     = $entity->lastPage();
+        $pagination["perPage"]      = $entity->perPage();
+        $pagination["currentPage"]  = $entity->currentPage();
         $pagination = $this->sended_data->put("_pagination", $pagination);
     }
 
@@ -228,7 +243,7 @@ class Controller extends BaseController
     {
         // dd($this);
         if (Toast::isAvailable()) {
-            $toast = request()->session()->get("_toast");
+            $toast              = request()->session()->get("_toast");
             $this->toast_config = new Toast($toast["type"], $toast["title"], $toast["message"]);
         }
         if (!empty($this->toast_config)) {
@@ -237,6 +252,7 @@ class Controller extends BaseController
         if (!empty($this->title)) {
             $this->sended_data->put("_title", $this->title);
         }
+        $this->sended_data->put("_showTitle", $this->show_title);
         if (Arr::has($this->back_option, "has_back") && $this->back_option["has_back"]) {
             $this->sended_data->put("_backNav", ["hasBack" => true, "urlBack" => $this->back_option["url_back"] ?? ""]);
         }
@@ -246,6 +262,20 @@ class Controller extends BaseController
             ->withViewData("_sidebars", $this->sidebar)
             ->withViewData("_sifat_surat", SifatSurat::all())
             ->withViewData("_bagianInstansi", Jabatan::all()->makeHidden("id_ijin"));
+    }
+
+    /**
+     * Error handler for throw if debug and redirect to error page if production.
+     *
+     * @return void
+     */
+    public function throwOrRedirect($message, $code)
+    {
+        if (env("APP_DEBUG", true)) {
+            throw new Exception($message);
+        } else {
+            return redirect(route("errors.index", ["code" => $code]));
+        }
     }
 
     private function validateKey($key)
@@ -266,12 +296,12 @@ class Controller extends BaseController
                     $check_key .= ".{$real_key}";
                 }
                 if (!$this->sended_data->has($check_key)) {
-                    throw new Exception("The '${real_key}' key was not found for added value on searched key.");
+                    $this->throwOrRedirect("The '${real_key}' key was not found for added value on searched key.", 500);
                 }
             }
         } else {
             if (!$this->sended_data->has($key)) {
-                throw new Exception("The '${key}' key was not found for added value on searched key.");
+                $this->throwOrRedirect("The '${key}' key was not found for added value on searched key.", 500);
             }
         }
     }
@@ -288,17 +318,17 @@ class Toast
     const ERROR = "error";
     const WARN = "warning";
     const INFO = "info";
-    private string $title = "";
+    private string $title   = "";
     private string $message = "";
-    private string $type = "";
-    private array $option = [];
+    private string $type    = "";
+    private array $option   = [];
 
     public function __construct($type, $title, $message, $option = [])
     {
-        $this->title = $title;
-        $this->message = $message;
-        $this->type = $type;
-        $this->option = $option;
+        $this->title    = $title;
+        $this->message  = $message;
+        $this->type     = $type;
+        $this->option   = $option;
     }
 
     /**

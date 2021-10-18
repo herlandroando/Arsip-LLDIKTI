@@ -7,6 +7,8 @@ use App\Http\Controllers\Toast;
 use App\Models\DokumenSuratKeluar;
 use App\Models\SuratKeluar;
 use App\Models\User;
+use App\Traits\HasGetFilterList;
+use App\Traits\HasManageableTableQuery;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -17,10 +19,62 @@ use Illuminate\Support\Facades\Validator;
 
 class SendController extends Controller
 {
+    use HasGetFilterList, HasManageableTableQuery;
+
+    protected string $table_name = "suratkeluar";
+
+    protected array $filter_list_option = [
+        "sifat" => ["table" => "sifatsurat", "only" => ["nama", "id"]],
+        "pembuat" => ["table" => "suratkeluar", "column" => 'nama_pembuat', "distinct" => true],
+        "asal_surat" => ["table" => "suratkeluar","distinct"=>true, "column" => 'nama', "relation" => "jabatan.asal_surat", "only" => ["jabatan.nama", "jabatan.id"]],
+    ];
+
+    protected array $table_option = [
+        "sifat" => ["column" => "id_sifat", "label" => "Sifat Surat", "relation" => "sifatsurat"],
+        "pembuat" => ["column" => "nama_pembuat", "label" => "Pembuat Surat"],
+        "asal_surat" => ["column" => "asal_surat", "label" => "Asal Surat", "relation" => "jabatan"],
+        "tanggal_surat" => ["column" => "tanggal_surat", "label" => "Tanggal Surat"],
+        "no_surat" => ["column" => "no_surat", "label" => "No. Surat"],
+    ];
+
+    protected array $filter_option = [
+        "sifat" => ["type" => "select", "label_column" => "sifatsurat.nama"],
+        "pembuat" => ["type" => "select"],
+        "asal_surat" => ["type" => "select", "label_column" => "jabatan.nama"],
+        "tanggal_surat" => ["type" => "date"],
+    ];
+
+    protected array $sort_available = [
+        "sifat" => "nama", "pembuat" => "nama_pembuat", "asal_surat" => "nama", "tanggal_surat" => "tanggal_surat", "no_surat" => "no_surat"
+    ];
+
     public function __construct()
     {
         parent::__construct();
         $this->setIndexActive("manage_mail.send");
+    }
+
+
+    public function queryIndex($inertia_request = true)
+    {
+        $search         = request()->query("search");
+        $surat_keluar    = SuratKeluar::query();
+        // dd($surat_masuk);
+        if (!empty($search)) {
+            $surat_keluar->orWhere("asal_surat", "like", "%$search%")->orWhere("no_surat", "like", "%$search%")->orWhere("perihal", "like", "%$search%");
+            $this->setData("q_search", $search);
+        }
+        $filter = $this->filterQuery($surat_keluar);
+        $sort = $this->sortQuery($surat_keluar, true);
+        if ($inertia_request) {
+            $this->setData("q_filter", $filter["list_filter"]);
+            $this->setData("q_filter_tag", $filter["list_tag"]);
+            // dd($sort);
+            if (!empty($sort)) {
+                $this->setData("q_sort", $sort);
+            }
+        }
+        return $surat_keluar;
     }
     /**
      * Display a listing of the resource.
@@ -30,15 +84,7 @@ class SendController extends Controller
     public function index(Request $request)
     {
         // $page        = $request->query("page", 1);
-        $search         = $request->query("search");
-        $filter_sifat   = $request->query("f_sifat");
-        $surat_keluar    = SuratKeluar::query();
-        // dd($surat_kelura);
-        if (!empty($search)) {
-            $surat_keluar->orWhere("asal_surat", "like", "%$search%")->orWhere("no_surat", "like", "%$search%")->orWhere("perihal", "like", "%$search%");
-            $this->setData("q_search", $search);
-        }
-        // dd($surat_keluar->toSql());
+        $surat_keluar = $this->queryIndex();
         $surat_keluar = $surat_keluar->paginate(10);
         // dd($surat_keluar);
         if ($surat_keluar->isNotEmpty()) {
@@ -60,9 +106,46 @@ class SendController extends Controller
             $this->setData("isAvailable", false);
         }
 
-        $this->setTitle("Surat Masuk");
+        $this->setTitle("Surat Keluar");
 
         return $this->runInertia("ManageMail/Send/Index");
+    }
+
+    public function jsonIndex()
+    {
+        $result = [
+            "result" => [],
+            // "currentPage"=>0,
+            // "lastPage"=>0,
+            "empty" => false,
+            "limit" => false,
+        ];
+        $surat_keluar = $this->queryIndex(false);
+        $surat_keluar = $surat_keluar->paginate(10);
+
+        if ($surat_keluar->isEmpty()) {
+            $result["empty"] = true;
+        }
+        $result["lastPage"]     = $surat_keluar->lastPage();
+        $result["currentPage"]  = $surat_keluar->currentPage();
+
+        if ($result["currentPage"] > $result["lastPage"]) {
+            $result["limit"] = true;
+            $result["empty"] = false;
+        }
+        $data = $surat_keluar->map(function ($item, $key) {
+            return [
+                "id"            => $item->id,
+                "no_surat"      => $item->no_surat,
+                "sifat"         => $item->sifatSurat->nama,
+                "asal_surat"    => $item->jabatan->nama,
+                "perihal"       => $item->perihal,
+                "tanggal_surat" => $item->tanggal_surat,
+                "pembuat"       => $item->nama_pembuat,
+            ];
+        });
+        $result["result"] = $data;
+        return response()->json($result);
     }
 
     /**
@@ -92,13 +175,14 @@ class SendController extends Controller
             "perihal"       => "required|string|max:254",
             "tanggal_surat" => "required|date|before_or_equal:now",
             "id_sifat"      => "required|exists:sifatsurat,id|max:500",
-            "pembuat"       => "required|string|max:500",
+            "pembuat"       => "nullable|string|max:500",
             "no_surat"      => "required|string|max:100",
-            "asal_surat"    => "required|string|max:500",
+            "asal_surat"    => "required|exists:jabatan,id",
             "tujuan"        => "required|string|max:255",
             "isi_ringkas"   => "required|string|max:500",
         ]);
         if ($validator->fails()) {
+            // dd($validator->failed());
             $toast = Toast::error("Gagal", "Terjadi kesalahan format pada data form yang dimasukkan.");
             return $this->redirectInertia(route("manage.send.create"), $toast);
         }
@@ -109,7 +193,8 @@ class SendController extends Controller
         $surat_keluar->no_surat      = $input["no_surat"];
         $surat_keluar->asal_surat    = $input["asal_surat"];
         $surat_keluar->tujuan        = $input["tujuan"];
-        $surat_keluar->pembuat       = $input["pembuat"];
+        $surat_keluar->nama_pembuat  = $input["pembuat"] ?? $request->user()->username;
+        $surat_keluar->id_pembuat    = $request->user()->id ?? null;
         $surat_keluar->isi_ringkas   = $input["isi_ringkas"];
         $surat_keluar->id_sifat      = $input["id_sifat"];
         $surat_keluar->save();
@@ -126,7 +211,7 @@ class SendController extends Controller
                 $file_surat_keluar->ukuran           = Storage::size($path_file);
                 $file_surat_keluar->alias            = $file_name;
                 $file_surat_keluar->tipe             = $extension;
-                $file_surat_keluar->id_suratmasuk    = $surat_keluar->id;
+                $file_surat_keluar->id_suratkeluar    = $surat_keluar->id;
                 $file_surat_keluar->nama             = $file["name"] ?? "FileTidakBernama.{$extension}";
                 $file_surat_keluar->save();
                 Storage::move($path_file, $target_path . $file_name);
@@ -161,7 +246,8 @@ class SendController extends Controller
         $nama_pembuat = $surat_keluar->nama_pembuat;
         $is_creator_me = false;
         if (!empty($pembuat)) {
-            $username_pembuat = $pembuat->username; //TODO Make profile and get name
+            $username_pembuat = $pembuat->username;
+            $nama_pembuat = $pembuat->nama;  //TODO// Make profile and get name
             $is_creator_me = $pembuat->username == $username;
         }
         $data = [
@@ -226,12 +312,14 @@ class SendController extends Controller
     {
         $input = $request->input();
         $validator = Validator::make($input, [
-            "perihal" => "required|string|max:254",
+            "perihal"       => "required|string|max:254",
             "tanggal_surat" => "required|date|before_or_equal:now",
-            "id_sifat" => "required|exists:sifatsurat,id|max:500",
-            "no_surat" => "required|string|max:100",
-            "asal_surat" => "required|string|max:500",
-            "isi_ringkas" => "required|string|max:500",
+            "id_sifat"      => "required|exists:sifatsurat,id|max:500",
+            "pembuat"       => "nullable|string|max:500",
+            "no_surat"      => "required|string|max:100",
+            "asal_surat"    => "required|exists:jabatan,id",
+            "tujuan"        => "required|string|max:255",
+            "isi_ringkas"   => "required|string|max:500",
         ]);
         if ($validator->fails()) {
             $toast = Toast::error("Gagal", "Terjadi kesalahan format pada data form yang dimasukkan.");
@@ -242,6 +330,7 @@ class SendController extends Controller
         $surat_keluar->perihal       = $input["perihal"];
         $surat_keluar->tanggal_surat = Carbon::parse($input["tanggal_surat"]);
         $surat_keluar->no_surat      = $input["no_surat"];
+        $surat_keluar->nama_pembuat  = $input["pembuat"];
         $surat_keluar->asal_surat    = $input["asal_surat"];
         $surat_keluar->isi_ringkas   = $input["isi_ringkas"];
         $surat_keluar->id_sifat      = $input["id_sifat"];
@@ -360,5 +449,18 @@ class SendController extends Controller
         session(["temp_file" => $temp_file]);
 
         return response()->json(["name" => $file->getClientOriginalName(), "id" => $store_session_name]);
+    }
+
+    public function searchUsername(Request $request)
+    {
+        $search = $request->query("search");
+        $users = User::orWhere("username", "like", "%" . $search . "%")
+            ->orWhere("nama", "like", "%" . $search . "%")
+            ->orWhere("nip", "like", "%" . $search . "%")->limit(7)->get(); // TODO// Add search by profile name
+        // dd($users->get(),$users->toSql());
+        $result = $users->map(function ($item, $key) {
+            return ["value" => "$item->nama ($item->username)", "real_value" => $item->username];
+        });
+        return response()->json(["result" => $result]);
     }
 }

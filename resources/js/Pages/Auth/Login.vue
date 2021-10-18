@@ -17,11 +17,12 @@
               Sistem Informasi Pengarsipan Surat LLDIKTI Wilayah XIV
             </h4>
           </el-col>
+
           <el-col class="hidden-md-and-up" :xs="14" :sm="14" :md="24">
-            <h4 class="hidden-sm-and-up">
+            <h4 class="hidden-md-and-up">
               Sistem Informasi Pengarsipan Surat LLDIKTI Wilayah XIV
             </h4>
-            <h2 class="hidden-xs-only">
+            <h2 class="hidden-sm-and-down">
               Sistem Informasi Pengarsipan Surat LLDIKTI Wilayah XIV
             </h2>
           </el-col>
@@ -67,8 +68,8 @@ export default {
       default: null,
     },
     success: {
-        type: Boolean,
-        default: false,
+      type: Boolean,
+      default: false,
     },
     sessionExpired: Boolean,
     logout: Boolean,
@@ -76,6 +77,10 @@ export default {
   },
   setup(props) {
     // console.log(props);
+
+    // const startCompleted = ref(false);
+
+
 
     // const logo = ref(Path.logo);
     const form = useForm({
@@ -87,9 +92,8 @@ export default {
     function login() {
       form.post(route("login.post"), {
         onSuccess: () => {
-            // if (props.success){
-
-            // }
+          // if (props.success){
+          // }
         },
       });
 

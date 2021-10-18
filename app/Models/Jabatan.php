@@ -12,4 +12,8 @@ class Jabatan extends Model
     protected $table = 'jabatan';
     public $timestamps = false;
 
+    public function ijin()
+    {
+        return $this->belongsTo(Ijin::class, "id_ijin");
+    }
 }

@@ -31,7 +31,7 @@ export default {
         },
         {
             max: 254,
-            message: lang.string.maximum(254, "Perihal"),
+            message: lang.string.maximum(254, "Asal Surat"),
             trigger: "blur",
         },
     ],
@@ -43,14 +43,14 @@ export default {
         },
         {
             max: 500,
-            message: lang.string.maximum(500, "Perihal"),
+            message: lang.string.maximum(500, "Isi Ringkas"),
             trigger: "blur",
         },
     ],
     id_sifat: [
         {
             required: true,
-            message: lang.string.required('Isi Ringkas'),
+            message: lang.string.required('Sifat Surat'),
             trigger: "change",
         },
     ],

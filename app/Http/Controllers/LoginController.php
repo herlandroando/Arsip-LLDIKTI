@@ -46,6 +46,17 @@ class LoginController extends Controller
 
     }
 
+    public function logout(Request $request)
+    {
+        Auth::logout();
+
+        $request->session()->invalidate();
+
+        $request->session()->regenerateToken();
+
+        return $this->redirectInertia(route('login'),Toast::info("Logout Berhasil","Anda telah logout."));
+    }
+
     /**
      * Show the form for creating a new resource.
      *

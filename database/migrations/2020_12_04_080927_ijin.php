@@ -14,15 +14,17 @@ class Ijin extends Migration
     public function up()
     {
         Schema::create('ijin', function (Blueprint $table) {
-            $table->smallIncrements('id');
+            $table->increments('id');
             $table->string('nama');
             $table->boolean('r_surat');
+            $table->boolean('r_all_disposisi');
             $table->boolean('r_laporan');
             $table->boolean('d_surat');
             $table->boolean('d_miliksurat');
             $table->boolean('dp_surat');
             $table->boolean('w_disposisi');
-            $table->boolean('w_surat');
+            $table->boolean('w_suratmasuk');
+            $table->boolean('w_suratkeluar');
             $table->boolean('admin');
         });
     }

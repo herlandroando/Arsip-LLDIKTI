@@ -4,10 +4,15 @@
       <el-col :span="24" :sm="12">
         <el-card class="box-card">
           <el-row>
-            <el-col :span="16">
+            <el-col :span="24" :md="12" :lg="14">
               <h4>Data Surat</h4>
             </el-col>
-            <el-col :span="8">
+            <el-col
+              :span="24"
+              :md="{ span: 12, push: 2 }"
+              :lg="{ span: 10, push: 2 }"
+              style="margin-bottom: 20px"
+            >
               <el-button-group>
                 <el-tooltip content="Ubah Surat" placement="top" effect="light">
                   <el-button
@@ -47,6 +52,7 @@
             <el-form-item label="Perihal" prop="perihal">
               <el-input
                 v-model="formData.perihal"
+                :readonly="!editMode"
                 placeholder="Isi perihal surat"
               ></el-input>
             </el-form-item>
@@ -58,7 +64,7 @@
                 :span="24"
                 :sm="12"
               >
-                <el-checkbox v-model="isCreatorMe" v-if="editMode"
+                <el-checkbox v-model="isCreatorMe" :disabled="!editMode"
                   >Saya pembuat suratnya.</el-checkbox
                 >
               </el-col>
@@ -83,6 +89,7 @@
                 >
                   <el-input
                     v-model="optionalData.nama_pembuat"
+                    readonly
                     placeholder="Masukkan nama pembuat surat"
                   ></el-input>
                 </el-form-item>
@@ -111,6 +118,7 @@
                 <el-form-item v-else label="Asal Surat">
                   <el-input
                     v-model="optionalData.asal_surat"
+                    :readonly="!editMode"
                     placeholder="Masukkan asal surat"
                   ></el-input>
                 </el-form-item>
@@ -119,6 +127,7 @@
                 <el-form-item label="Tujuan" prop="tujuan">
                   <el-input
                     v-model="formData.tujuan"
+                    :readonly="!editMode"
                     placeholder="Isi tujuan surat"
                   ></el-input>
                 </el-form-item>
@@ -130,6 +139,7 @@
                     class="width-100"
                     type="date"
                     placeholder="Pilih tanggal surat"
+                    :readonly="!editMode"
                     :disabled-date="dateNowAndBefore"
                     v-model="tanggal_surat_computed"
                   ></el-date-picker>
@@ -160,6 +170,7 @@
                 <el-form-item v-else label="Sifat Surat">
                   <el-input
                     v-model="optionalData.sifat"
+                    readonly
                     placeholder="Masukkan sifat surat"
                   ></el-input>
                 </el-form-item>
@@ -168,6 +179,7 @@
                 <el-form-item label="No. Surat" prop="no_surat">
                   <el-input
                     placeholder="Isi nomor surat"
+                    :readonly="!editMode"
                     v-model="formData.no_surat"
                   ></el-input>
                 </el-form-item>
@@ -178,6 +190,7 @@
                   <el-input
                     type="textarea"
                     :rows="4"
+                    :readonly="!editMode"
                     placeholder="Masukkan isi ringkas surat"
                     v-model="formData.isi_ringkas"
                   />
@@ -357,6 +370,10 @@ export default {
     });
 
     onMounted(() => {
+      initData();
+    });
+
+    function initData(withFile = true) {
       if (!_.isEmpty(props.detailData)) {
         let data = props.detailData;
         console.log(data);
@@ -369,12 +386,14 @@ export default {
         formData.pembuat = data.pembuat;
         formData.isi_ringkas = data.isi_ringkas;
         formData.id_sifat = data.id_sifat;
-        optionalData.file_surat = _.isEmpty(data.file_surat)
-          ? false
-          : data.file_surat;
-        fileSurat.value = _.isEmpty(data.file_surat_form)
-          ? []
-          : data.file_surat_form;
+        if (withFile) {
+          optionalData.file_surat = _.isEmpty(data.file_surat)
+            ? false
+            : data.file_surat;
+          fileSurat.value = _.isEmpty(data.file_surat_form)
+            ? []
+            : data.file_surat_form;
+        }
         optionalData.submit_oleh = data.submit_oleh;
         optionalData.nama_pembuat = data.nama_pembuat;
         optionalData.asal_surat = data.bagian_asal_surat;
@@ -382,10 +401,13 @@ export default {
         optionalData.dibuat_tanggal = data.dibuat_tanggal;
         // formData.dibuat_tanggal = data.dibuat_tanggal;
       }
-    });
+    }
 
     function handleToggleEdit() {
       editMode.value = !editMode.value;
+      if (!editMode.value) {
+        initData(false);
+      }
     }
 
     async function handleSubmitForm() {

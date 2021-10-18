@@ -46,6 +46,11 @@ class User extends Authenticatable
         return $this->hasOne(Profil::class,"id_user");
     }
 
+    public function jabatan()
+    {
+        return $this->belongsTo(Jabatan::class,"id_jabatan");
+    }
+
     public function surat_masuk()
     {
         return $this->hasMany(SuratMasuk::class,"id_pembuat");

@@ -15,17 +15,19 @@ class Disposisi extends Migration
     {
         Schema::create('disposisi', function (Blueprint $table) {
             $table->id();
+            $table->boolean('is_suratmasuk')->default(0);
+            $table->string('no_disposisi', 100)->nullable();
+            $table->string('status', 30)->nullable();
+            $table->string('isi', 500)->nullable();
             $table->unsignedBigInteger('id_pengirim')->nullable();
-            $table->unsignedBigInteger('id_penerima')->nullable();
-            $table->unsignedBigInteger('id_suratmasuk');
-            $table->string('isi',500)->nullable();
-            $table->date('read_at')->nullable();
+            $table->unsignedInteger('id_jabatan')->nullable();
+            $table->unsignedBigInteger('id_suratmasuk')->nullable();
+            $table->dateTime("local_created_at")->nullable();
+            $table->timestamp('expired_at');
             $table->timestamps();
-
-            $table->foreign('id_pengirim')->references('id')->on('profil')->onDelete('set null');
-            $table->foreign('id_penerima')->references('id')->on('profil')->onDelete('set null');
-            $table->foreign('id_suratmasuk')->references('id')->on('suratmasuk')->onDelete('cascade');
-
+            $table->foreign('id_jabatan')->references('id')->on('jabatan')->nullOnDelete();
+            $table->foreign('id_pengirim')->references('id')->on('pengguna')->nullOnDelete();
+            $table->foreign('id_suratmasuk')->references('id')->on('suratmasuk')->cascadeOnDelete();
         });
     }
 
@@ -37,6 +39,5 @@ class Disposisi extends Migration
     public function down()
     {
         Schema::dropIfExists('disposisi');
-
     }
 }

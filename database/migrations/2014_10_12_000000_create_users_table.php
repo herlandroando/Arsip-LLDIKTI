@@ -18,8 +18,14 @@ class CreateUsersTable extends Migration
             $table->string('username')->unique();
             // $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->rememberToken();
+            // $table->rememberToken();
+            $table->string('nama', 255);
+            $table->string('nip', 18)->nullable();
+            $table->string('no_telpon')->nullable();
+            $table->unsignedInteger('id_jabatan')->nullable();
             $table->timestamps();
+
+            // $table->foreign('id_jabatan')->references('id')->on('jabatan')->nullOnDelete();
         });
     }
 

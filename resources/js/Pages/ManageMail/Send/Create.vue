@@ -19,7 +19,12 @@
             </el-form-item>
             <el-row :gutter="20">
               <!-- Line -->
-              <el-col class="creator-check" :class="{'active':!isCreatorMe}" :span="24" :sm="12">
+              <el-col
+                class="creator-check"
+                :class="{ active: !isCreatorMe }"
+                :span="24"
+                :sm="12"
+              >
                 <el-checkbox v-model="isCreatorMe"
                   >Saya pembuat suratnya.</el-checkbox
                 >
@@ -28,7 +33,7 @@
                 <el-form-item
                   v-if="!isCreatorMe"
                   label="Pembuat Surat"
-                  prop="asal_surat"
+                  prop="pembuat"
                 >
                   <el-autocomplete
                     class="width-100"
@@ -274,7 +279,10 @@ export default {
       });
       console.log(is_valid);
       if (is_valid) {
-        Inertia.post(route("manage.inbox.store"), formData, {
+        if (!isCreatorMe.value) {
+            formData.pembuat = "";
+        }
+        Inertia.post(route("manage.send.store"), formData, {
           preserveState: true,
           onBefore: (visit) => {
             console.log("before visit", visit);
@@ -282,7 +290,7 @@ export default {
           },
           onSuccess: (page) => {
             console.log("success visit", page);
-            form.value.resetFields();
+            if (props._toast.type == "success") form.value.resetFields();
           },
           onError: (errors) => {
             console.log("error visit", errors);
@@ -307,6 +315,25 @@ export default {
         return false;
       }
     }
+
+    async function querySearchAsync(queryString, cb) {
+      let result = [];
+      await axios
+        .get(route("manage.send.search.username"), {
+          data: { search: queryString },
+        })
+        .then((response) => {
+          console.log(response);
+          result = response.data.result;
+        });
+      console.log("result is", result);
+      if (_.isEmpty(result)) cb([]);
+      else cb(result);
+    }
+
+    const handleSelect = (item) => {
+      formData.pembuat = item.real_value;
+    };
 
     function handleErrorMessage(key) {
       console.log("ss", formData);
@@ -382,6 +409,7 @@ export default {
       handlePreview,
       handleExceed,
       handleSuccessUpload,
+      handleSelect,
       handleErrorUpload,
       handleErrorMessage,
       handleValidation,
@@ -391,6 +419,7 @@ export default {
       bagianInstansi,
       isCreatorMe,
       //   handleUpload,
+      querySearchAsync,
       //   beforeRemove,
       formData,
       form,
@@ -407,8 +436,8 @@ export default {
 .creator-check.active {
   margin: auto 0 !important;
 }
-.creator-check{
-    margin: 50px 0;
-    /* transition: all 1s ; */
+.creator-check {
+  margin: 50px 0;
+  /* transition: all 1s ; */
 }
 </style>

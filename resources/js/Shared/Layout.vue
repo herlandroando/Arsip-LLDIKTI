@@ -1,45 +1,56 @@
 <template>
-  <el-container direction="vertical" class="app-main">
-    <el-header class="header-container">
-      <header-custom
-        :hasHeaderSearch="hasHeaderSearch"
-        @handleSidebar="handleSidebar"
-        @handleSearch="handleSearch"
-      />
-    </el-header>
-    <el-container class="height-100" direction="horizontal">
-      <sidebar
-        :indexActive="indexActive"
-        :contents="sidebarContents"
-        :isOpen="stateOpenSidebar"
-      />
-      <el-container direction="vertical">
-        <el-main class="content-container">
-          <el-space direction="horizontal">
-            <template v-if="backNav.hasBack !== false">
-              <a
-                style="text-decoration: none"
-                v-if="backNav.hasBack && backNav.urlBack === ''"
-                href="javascript:history.back()"
-              >
-                <i class="el-icon-arrow-left"></i></a
-              ><inertia-link v-else :href="backNav.urlBack"
-                ><i class="el-icon-arrow-left"></i
-              ></inertia-link>
-            </template>
-            <h4>{{ title }}</h4>
-          </el-space>
-          <slot></slot>
-        </el-main>
-        <el-footer
-          height="40px"
-          class="footer-container"
-          style="background-color: #6d6d64"
-          >Footer</el-footer
-        >
+  <div
+    ref="container"
+    :infinite-scroll-delay="1000"
+    v-infinite-scroll="handleEndOfScroll"
+    scroll-region
+  >
+    <el-container direction="vertical" class="app-main">
+      <el-header class="header-container">
+        <header-custom
+          :hasHeaderSearch="hasHeaderSearch"
+          @handleSidebar="handleSidebar"
+          @handleSearch="handleSearch"
+        />
+      </el-header>
+      <el-container class="height-100" direction="horizontal">
+        <sidebar
+          :indexActive="indexActive"
+          :contents="sidebarContents"
+          :isOpen="stateOpenSidebar"
+        />
+        <el-container direction="vertical">
+          <el-main class="content-container bg-gray">
+            <el-space direction="horizontal">
+              <template v-if="backNav.hasBack !== false">
+                <a
+                  style="text-decoration: none"
+                  v-if="backNav.hasBack && backNav.urlBack === ''"
+                  href="javascript:history.back()"
+                >
+                  <i class="el-icon-arrow-left"></i></a
+                ><inertia-link v-else :href="backNav.urlBack"
+                  ><i class="el-icon-arrow-left"></i
+                ></inertia-link>
+              </template>
+              <template v-if="showTitle">
+                <h4>{{ title }}</h4>
+              </template>
+            </el-space>
+            <!-- <div :class="{'main-scrollable':true,'disable':stateOpenSidebar}"> -->
+            <slot></slot>
+            <!-- </div> -->
+          </el-main>
+          <el-footer
+            height="40px"
+            class="footer-container"
+            style="background-color: #6d6d64"
+            >Footer</el-footer
+          >
+        </el-container>
       </el-container>
     </el-container>
-  </el-container>
+  </div>
   <!-- <el-dialog
     :title="dialogWarn.title"
     v-model="dialogWarn.visible"
@@ -60,10 +71,20 @@
 
 <script>
 // import Sidebar from "./Sidebar.vue";
-import { onMounted, watch, ref, inject, provide } from "vue";
+import {
+  onMounted,
+  watch,
+  ref,
+  inject,
+  provide,
+  computed,
+  onUpdated,
+} from "vue";
 import { ElNotification } from "element-plus";
+import { useMq } from "vue3-mq";
 import Sidebar from "./Sidebar.vue";
 import HeaderCustom from "./Header.vue";
+import { Inertia } from "@inertiajs/inertia";
 
 export default {
   components: { Sidebar, HeaderCustom },
@@ -77,14 +98,18 @@ export default {
       default: false,
     },
   },
-  emits: ["handleHeaderSearch"],
+  emits: ["handleHeaderSearch", "endScroll"],
   setup(props, { emit }) {
+    const body = document.querySelector("body");
     const stateOpenSidebar = ref(false);
     const sidebarContents = inject("sidebars", null);
     // const breadcrumb = inject("breadcrumb", null);
     const indexActive = inject("indexActive", "0");
     const title = inject("title", "Title_Not_Defined");
+    const showTitle = inject("showTitle", true);
     const backNav = inject("backNav", null);
+    const container = ref(null);
+    const mq = useMq();
     // const dialogWarn = reactive({
     //   visible: false,
     //   title: "Dialog",
@@ -114,24 +139,57 @@ export default {
     //   dialogWarn.clickCancelCallback();
     // }
 
+    Inertia.on("success", () => {
+    //   console.log(mq.mdMinus, mq);
+      if (mq.mdMinus) {
+        if (stateOpenSidebar.value) {
+          body.style.overflowY = "hidden";
+        } else {
+          body.style.overflowY = "auto";
+        }
+      }
+      //   toast(props._toast);
+    });
+
+    // function toast(toast) {
+    //   if (toast instanceof Object)
+    //     ElNotification({
+    //       type: toast.type,
+    //       title: toast.title,
+    //       message: toast.message,
+    //     });
+    // }
+
     function handleSidebar(state) {
       stateOpenSidebar.value = state;
+      if (state) {
+        body.style.overflowY = "hidden";
+      } else {
+        body.style.overflowY = "auto";
+      }
     }
     function handleSearch(value) {
       emit("handleHeaderSearch", value);
     }
 
+    function handleEndOfScroll() {
+      if (mq.current == "xs") emit("endScroll");
+    }
+
     return {
       indexActive,
-    //   handleDialogWarnCancel,
-    //   handleDialogWarnConfirm,
-    //   dialogWarn,
+      //   handleDialogWarnCancel,
+      //   handleDialogWarnConfirm,
+      //   dialogWarn,
       title,
+      showTitle,
       backNav,
       sidebarContents,
       stateOpenSidebar,
       handleSidebar,
       handleSearch,
+      handleEndOfScroll,
+      container,
     };
   },
 };
@@ -142,6 +200,7 @@ body {
   margin: 0px;
   overflow-y: hidden;
 }
+
 .width-100 {
   width: 100% !important;
 }
@@ -156,8 +215,8 @@ body {
 }
 .header-container {
   position: relative;
-  width: 100vw;
-  z-index: 1900;
+  /* width: 100vw; */
+  z-index: 1000;
 }
 
 .app-main {

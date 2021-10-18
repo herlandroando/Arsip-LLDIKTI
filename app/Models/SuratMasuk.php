@@ -20,17 +20,19 @@ class SuratMasuk extends Model
         'deleted_at',
     ];
     protected $casts = [
-        "tanggal_surat" => "datetime"
+        "tanggal_surat" => "datetime",
     ];
-    // public function getSifatAttribute($value)
-    // {
-    //     return
-    // }
+    protected static function booted()
+    {
+        static::saving(function ($surat_masuk) {
+            $surat_masuk->local_created_at = Carbon::now()->timezone("Asia/Jayapura");
+        });
+    }
 
     public function setTanggalSuratAttribute($value)
     {
-    // $this->casts;
-    if (is_string($value)&&Carbon::hasFormat($value, "d/m/Y"))
+        // $this->casts;
+        if (is_string($value) && Carbon::hasFormat($value, "d/m/Y"))
             $this->attributes['tanggal_surat'] = Carbon::createFromFormat("d/m/Y", $value);
         else
             $this->attributes['tanggal_surat'] = $value;
@@ -55,16 +57,22 @@ class SuratMasuk extends Model
         return $query;
     }
 
-    public function sifatSurat()
+    public function scopeWhereNoSurat($query, $no_surat)
     {
-        return $this->belongsTo(SifatSurat::class,"id_sifat");
+        return $query->where("no_surat", "like", "%{$no_surat}%");
     }
 
-    public function dokumen(){
-        return $this->hasMany(DokumenSuratMasuk::class,"id_suratmasuk");
+    public function sifatSurat()
+    {
+        return $this->belongsTo(SifatSurat::class, "id_sifat");
+    }
+
+    public function dokumen()
+    {
+        return $this->hasMany(DokumenSuratMasuk::class, "id_suratmasuk");
     }
     public function user()
     {
-        return $this->belongsTo(User::class,"id_pembuat");
+        return $this->belongsTo(User::class, "id_pembuat");
     }
 }

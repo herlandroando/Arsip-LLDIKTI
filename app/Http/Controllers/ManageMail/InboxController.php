@@ -7,6 +7,8 @@ use App\Http\Controllers\Toast;
 use App\Http\Requests\StoreSuratMasukRequest;
 use App\Models\DokumenSuratMasuk;
 use App\Models\SuratMasuk;
+use App\Traits\HasManageableTableQuery;
+use App\Traits\HasGetFilterList;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -19,10 +21,61 @@ use Illuminate\Support\Str;
 
 class InboxController extends Controller
 {
+    use HasGetFilterList, HasManageableTableQuery;
+
+    protected string $table_name = "suratmasuk";
+
+    protected array $filter_list_option = [
+        "sifat" => ["table" => "sifatsurat", "only" => ["nama", "id"]],
+        "pembuat" => ["table" => "suratmasuk", "relation" => "pengguna.id_pembuat", "column" => 'nama', "only" => ["pengguna.nama", "pengguna.id"]],
+        "asal_surat" => ["table" => "suratmasuk", "column" => 'asal_surat', "distinct" => true],
+    ];
+
+    protected array $table_option = [
+        "sifat" => ["column" => "id_sifat", "label" => "Sifat Surat", "relation" => "sifatsurat"],
+        "pembuat" => ["column" => "id_pembuat", "label" => "Pembuat Surat", "relation" => "pengguna"],
+        "asal_surat" => ["column" => "asal_surat", "label" => "Asal Surat"],
+        "tanggal_surat" => ["column" => "tanggal_surat", "label" => "Tanggal Surat"],
+        "no_surat" => ["column" => "no_surat", "label" => "No. Surat"],
+    ];
+
+    protected array $filter_option = [
+        "sifat" => ["type" => "select", "label_column" => "sifatsurat.nama"],
+        "pembuat" => ["type" => "select", "label_column" => "pengguna.nama"],
+        "asal_surat" => ["type" => "select"],
+        "tanggal_surat" => ["type" => "date"],
+    ];
+
+    protected array $sort_available = [
+        "sifat" => "nama", "pembuat" => "nama", "asal_surat" => "asal_surat", "tanggal_surat" => "tanggal_surat", "no_surat" => "no_surat"
+    ];
+
     public function __construct()
     {
         parent::__construct();
         $this->setIndexActive("manage_mail.inbox");
+    }
+
+    public function queryIndex($inertia_request = true)
+    {
+        $search         = request()->query("search");
+        $surat_masuk    = SuratMasuk::query();
+        // dd($surat_masuk);
+        if (!empty($search)) {
+            $surat_masuk->orWhere($this->table_name . ".asal_surat", "like", "%$search%")->orWhere($this->table_name . ".no_surat", "like", "%$search%")->orWhere($this->table_name . ".perihal", "like", "%$search%");
+            $this->setData("q_search", $search);
+        }
+        $filter = $this->filterQuery($surat_masuk);
+        $sort = $this->sortQuery($surat_masuk, true);
+        if ($inertia_request) {
+            $this->setData("q_filter", $filter["list_filter"]);
+            $this->setData("q_filter_tag", $filter["list_tag"]);
+            // dd($sort);
+            if (!empty($sort)) {
+                $this->setData("q_sort", $sort);
+            }
+        }
+        return $surat_masuk;
     }
     /**
      * Display a listing of the resource.
@@ -31,16 +84,14 @@ class InboxController extends Controller
      */
     public function index(Request $request)
     {
+
         // $page        = $request->query("page", 1);
-        $search         = $request->query("search");
-        $filter_sifat   = $request->query("f_sifat");
-        $surat_masuk = SuratMasuk::query();
-        // dd($surat_masuk);
-        if (!empty($search)) {
-            $surat_masuk->orWhere("asal_surat", "like", "%$search%")->orWhere("no_surat", "like", "%$search%")->orWhere("perihal", "like", "%$search%");
-            $this->setData("q_search", $search);
-        }
-        // dd($surat_masuk->toSql());
+        $surat_masuk = $this->queryIndex();
+
+        // dd("-");
+        // $query = str_replace(array('?'), array('\'%s\''), $surat_masuk->toSql());
+        // $query = vsprintf($query, $surat_masuk->getBindings());
+        // dd($query, $this->getSendedData());
         $surat_masuk = $surat_masuk->paginate(10);
         // dd($surat_masuk);
         if ($surat_masuk->isNotEmpty()) {
@@ -67,6 +118,43 @@ class InboxController extends Controller
         return $this->runInertia("ManageMail/Inbox/Index");
     }
 
+    public function jsonIndex()
+    {
+        $result = [
+            "result" => [],
+            // "currentPage"=>0,
+            // "lastPage"=>0,
+            "empty" => false,
+            "limit" => false,
+        ];
+        $surat_masuk = $this->queryIndex(false);
+        $surat_masuk = $surat_masuk->paginate(10);
+
+        if ($surat_masuk->isEmpty()) {
+            $result["empty"] = true;
+        }
+        $result["lastPage"]     = $surat_masuk->lastPage();
+        $result["currentPage"]  = $surat_masuk->currentPage();
+
+        if ($result["currentPage"] > $result["lastPage"]) {
+            $result["limit"] = true;
+            $result["empty"] = false;
+        }
+        $data = $surat_masuk->map(function ($item, $key) {
+            return [
+                "id"            => $item->id,
+                "no_surat"      => $item->no_surat,
+                "sifat"         => $item->sifatSurat->nama,
+                "asal_surat"    => $item->asal_surat,
+                "perihal"       => $item->perihal,
+                "tanggal_surat" => $item->tanggal_surat,
+                "no_agenda"     => $item->no_agenda,
+            ];
+        });
+        $result["result"] = $data;
+        return response()->json($result);
+    }
+
     /**
      * Show the form for creating a new resource.
      *
@@ -76,10 +164,9 @@ class InboxController extends Controller
     {
         // session(["temp_file" => []]);
         // 1625788800/AO0O1625788800.jpg
-        $this->setTitle("Buat Surat Masuk");
+        $this->setTitle("Buat Surat Masuk", true);
         // session(["temp_file"=>null]);
         // dd(session("temp_file"));
-
         if ($request->session()->has("temp_file"))
             $this->setData("tempFileSurat", session("temp_file"));
         return $this->runInertia("ManageMail/Inbox/Create");
@@ -116,6 +203,7 @@ class InboxController extends Controller
         $surat_masuk->asal_surat    = $input["asal_surat"];
         $surat_masuk->isi_ringkas   = $input["isi_ringkas"];
         $surat_masuk->id_sifat      = $input["id_sifat"];
+        $surat_masuk->id_pembuat    = $request->user()->id ?? null;
         $surat_masuk->save();
         $temp_file = session("temp_file");
         if (!empty($temp_file)) {

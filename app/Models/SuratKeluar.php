@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class SuratKeluar extends Model
@@ -20,12 +21,27 @@ class SuratKeluar extends Model
         'deleted_at',
     ];
 
+    protected static function booted()
+    {
+        static::saving(function ($surat_keluar) {
+            $surat_keluar->local_created_at = Carbon::now()->timezone("Asia/Jayapura");
+        });
+    }
+
+
     public function setTanggalSuratAttribute($value)
     {
         if (is_string($value) && Carbon::hasFormat($value, "d/m/Y"))
             $this->attributes['tanggal_surat'] = Carbon::createFromFormat("d/m/Y", $value);
         else
             $this->attributes['tanggal_surat'] = $value;
+    }
+
+    public function getCustomNamaPembuatAttribute()
+    {
+        $username = $this->attributes["nama_pembuat"];
+        $user = DB::table('pengguna')->where("username", $username)->first();
+        return empty($user) ? $username : $user->nama;
     }
 
 
@@ -51,7 +67,8 @@ class SuratKeluar extends Model
         return $this->belongsTo(SifatSurat::class, "id_sifat");
     }
 
-    public function jabatan(){
+    public function jabatan()
+    {
         return $this->belongsTo(Jabatan::class, "asal_surat");
     }
 

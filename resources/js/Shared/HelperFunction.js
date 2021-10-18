@@ -56,6 +56,40 @@ export function classificationFileType(ext = "") {
     return "Tidak Diketahui"
 }
 
+/**
+ * If time was now and before today it will false (If true it will disabled). It was helper for
+ * limited date for Element Plus's Date form.
+ *
+ * @param {Date} time
+ * @returns
+ */
+export function dateNowAndBefore(time) {
+    return time.getTime() > Date.now();
+}
+
+/**
+ * If time was now and after today it will false (If true it will disabled). It was helper for
+ * limited date for Element Plus's Date form.
+ *
+ * @param {Date} time
+ * @returns
+ */
+export function dateNowAndAfter(time) {
+    return time.getTime() < Date.now();
+}
+
+/**
+ * Truncate string if get maximum character or it will stop on first dot. Default maximum
+ * character is 25 character.
+ */
+export function truncateString(string, max = 25) {
+    return _.truncate(string, {
+        'length': max,
+        'separator': /[.]/
+    });
+
+}
+
 // console.log(humanFileSize(1551859712)); // 1.4 GiB
 // console.log(humanFileSize(5000, true)); // 5.0 kB
 // console.log(humanFileSize(5000, false)); // 4.9 KiB

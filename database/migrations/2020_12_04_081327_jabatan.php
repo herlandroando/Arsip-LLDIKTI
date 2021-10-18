@@ -15,9 +15,12 @@ class Jabatan extends Migration
     {
         Schema::create('jabatan', function (Blueprint $table) {
             $table->increments('id');
-            $table->unsignedSmallInteger('id_ijin');
-            $table->string('nama',120);
+            $table->unsignedInteger('id_ijin');
+            $table->string('nama', 120);
             $table->foreign('id_ijin')->references('id')->on('ijin')->restrictOnDelete();
+        });
+        Schema::table("pengguna", function (Blueprint $table) {
+            $table->foreign('id_jabatan')->references('id')->on('jabatan')->nullOnDelete();
         });
     }
 

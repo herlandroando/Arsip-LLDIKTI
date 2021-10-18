@@ -24,6 +24,7 @@ class Suratmasuk extends Migration
             $table->string('perihal', 255);
             // $table->string('tembusan', 500)->nullable();
             $table->string('isi_ringkas', 500)->nullable();
+            $table->dateTime("local_created_at")->nullable();
             $table->softDeletes();
             $table->timestamps();
 
