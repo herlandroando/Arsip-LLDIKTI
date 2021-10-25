@@ -135,13 +135,12 @@
           </el-form>
         </el-card>
       </el-col>
-      <el-col :span="24" :sm="12">
+      <el-col :span="24" :sm="12" class="upload-container">
         <el-card class="box-card">
           <h4>Dokumen Surat</h4>
           <el-upload
             class="upload-demo"
             :action="routes('manage.inbox.upload.temp')"
-            :headers="{ 'X-CSRF-TOKEN': csrf }"
             :on-preview="handlePreview"
             :on-error="handleErrorUpload"
             :on-remove="handleRemove"
@@ -150,6 +149,7 @@
             :before-upload="handleValidation"
             :on-exceed="handleExceed"
             :file-list="fileSurat"
+            :headers="{ 'X-XSRF-TOKEN': getXSRF() }"
           >
             <el-button size="small" type="primary">Click to upload</el-button>
             <template #tip>
@@ -173,7 +173,7 @@ import Layout from "@shared/Layout.vue";
 import { ElNotification } from "element-plus";
 import {
   humanFileSize,
-  classificationFileType,
+  classificationFileType, getXSRF
 } from "@shared/HelperFunction.js";
 import _ from "lodash";
 import axios from "axios";
@@ -212,7 +212,7 @@ export default {
       isi_ringkas: "",
       id_sifat: "",
     });
-    const csrf = inject("csrf");
+    // const csrf = inject("csrf");
     const limitUploadSize = "4096";
     const isCreatorMe = ref(false);
     const form = ref(null);
@@ -280,7 +280,7 @@ export default {
       console.log(is_valid);
       if (is_valid) {
         if (!isCreatorMe.value) {
-            formData.pembuat = "";
+          formData.pembuat = "";
         }
         Inertia.post(route("manage.send.store"), formData, {
           preserveState: true,
@@ -385,11 +385,11 @@ export default {
       console.log(file);
     }
     function handleExceed(files, fileList) {
-      this.$message.warning(
-        `The limit is 3, you selected ${
-          files.length
-        } files this time, add up to ${files.length + fileList.length} totally`
-      );
+      ElNotification({
+        type: "error",
+        title: "Limit Upload",
+        message: "Anda telah mencapai limit file yang dapat di upload.",
+      });
     }
 
     function dateNowAndBefore(time) {
@@ -425,8 +425,9 @@ export default {
       form,
       fileSurat,
       optionalData,
-      csrf,
+      //   csrf,
       ruleComputed,
+      getXSRF
     };
   },
 };
@@ -439,5 +440,10 @@ export default {
 .creator-check {
   margin: 50px 0;
   /* transition: all 1s ; */
+}
+@media only screen and (max-width: 768px) {
+  .upload-container {
+    margin: 40px 0px;
+  }
 }
 </style>

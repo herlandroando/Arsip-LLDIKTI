@@ -43,7 +43,7 @@ class InboxController extends Controller
     public function __construct()
     {
         parent::__construct();
-        $this->setIndexActive("manage_mail.inbox");
+        $this->setIndexActive("recycle.inbox");
     }
 
     public function queryIndex($inertia_request = true)
@@ -153,7 +153,9 @@ class InboxController extends Controller
         return $this->redirectInertia(route("recycle.inbox.index"), $toast);
     }
 
-    public function restore(SuratMasuk $surat_masuk){
+    public function restore($surat_masuk)
+    {
+        $surat_masuk = SuratMasuk::withTrashed()->find($surat_masuk);
         $surat_masuk->restore();
         $toast = Toast::success("Kembalikan Berhasil", "Pengembalian surat masuk berhasil!");
         return $this->redirectInertia(route("recycle.inbox.index"), $toast);

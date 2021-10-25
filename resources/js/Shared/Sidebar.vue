@@ -22,6 +22,39 @@
           >
         </el-col>
       </el-row>
+      <hr class="hidden-md-and-up" style="width: 100%" />
+
+      <el-row
+        class="hidden-md-and-up"
+        style="padding: 15px 16px; font-size: 14px"
+      >
+        <el-col :span="24" class="profile-data-container">
+          <p>
+            <b>{{ profile.nama }}</b>
+          </p>
+          <p style="color: var('--el-text-color-regular')">
+            @{{ profile.username }}
+          </p>
+          <p>
+            <b>{{ profile.jabatan }}</b>
+          </p>
+        </el-col>
+        <el-col class="hidden-md-and-up" style="text-align: left" :span="24">
+          <Link
+            :href="
+              routes('profile', {
+                user: profile.id,
+                username: profile.username,
+              })
+            "
+          >
+            <el-button style="margin-right: 10px" type="primary">
+              Lihat Profil</el-button
+            >
+          </Link>
+        </el-col>
+      </el-row>
+      <hr class="hidden-md-and-up" style="width: 100%" />
       <template v-for="content in contents">
         <template v-if="isPermitted(content.permission)">
           <el-sub-menu
@@ -60,18 +93,28 @@
           </el-menu-item>
         </template>
       </template>
+      <el-menu-item
+        v-if="useMq().mdMinus"
+        class="text-error"
+        @click="handleLogout"
+      >
+         <i class="el-icon-top-left"></i>
+        <template #title> Logout </template>
+      </el-menu-item>
     </div>
   </el-menu>
 </template>
 
 <script>
 import { Inertia } from "@inertiajs/inertia";
+import { Link } from "@inertiajs/inertia-vue3";
 import { reactive, ref } from "@vue/reactivity";
 import { useMq } from "vue3-mq";
 import { inject } from "@vue/runtime-core";
 
+
 export default {
-  components: {},
+  components: { Link },
   props: {
     contents: Object,
     indexActive: { type: String, default: "0" },
@@ -79,6 +122,7 @@ export default {
   },
   setup(props) {
     // const stateOpenSidebar = ref(props.isOpen);
+    const profile = inject("user");
     const permission = inject("permission", null);
     const isPermitted = (pm) => {
       if (Array.isArray(pm) && pm.length > 0) {
@@ -98,12 +142,28 @@ export default {
     function handleClickMenuItem(url) {
       Inertia.visit(route(url));
     }
-    return { handleClickMenuItem, useMq, permission, isPermitted };
+    function handleLogout() {
+      Inertia.get(route("logout"));
+    }
+    return {
+      handleLogout,
+      handleClickMenuItem,
+      useMq,
+      permission,
+      isPermitted,
+      profile,
+    };
   },
 };
 </script>
 
 <style scoped>
+.profile-container div {
+  padding: 10px 0px;
+}
+.profile-data-container p {
+  margin: 5px 0px;
+}
 .title-sidebar {
   visibility: hidden;
 }
@@ -129,6 +189,7 @@ export default {
   }
   .scrollable {
     overflow-y: auto;
+    overflow-x: hidden;
     max-height: 87vh;
     height: 87vh;
   }

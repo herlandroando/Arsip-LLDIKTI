@@ -228,7 +228,7 @@ body {
 }
 
 .text-error {
-  color: #721c24;
+  color: var(--el-color-error);
 }
 
 .text-muted {

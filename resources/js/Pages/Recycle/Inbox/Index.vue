@@ -212,7 +212,7 @@
           style="width: 100%"
           @click="handleRestoreMail()"
           type="primary"
-          >Lihat Detail</el-button
+          >Pulihkan</el-button
         >
         <el-popconfirm
           title="Apakah anda yakin menghapus surat ini?"
@@ -303,7 +303,7 @@ export default {
         cancelTokenPage.value.cancel();
       }
       Inertia.get(
-        route("restore.inbox.index"),
+        route("recycle.inbox.index"),
         {
           page: query.currentPage,
           search: search.value,
@@ -323,7 +323,7 @@ export default {
     }
     function handleSearch() {
       Inertia.get(
-        route("restore.inbox.index"),
+        route("recycle.inbox.index"),
         { search: search.value, ...query.filterQuery, sort: query.sort },
         {
           onCancelToken: (cancelToken) => (cancelTokenPage.value = cancelToken),
@@ -337,14 +337,14 @@ export default {
         id = actionIdSelected.value;
       }
       actionDialogVisible.value = false;
-      Inertia.delete(route("restore.inbox.destroy", { surat_masuk: id }));
+      Inertia.delete(route("recycle.inbox.destroy", { surat_masuk: id }));
     }
     function handleRestoreMail(id = "") {
       if (id === "") {
         id = actionIdSelected.value;
       }
       actionDialogVisible.value = false;
-      Inertia.get(route("restore.inbox.restore", { surat_masuk: id }));
+      Inertia.put(route("recycle.inbox.restore", { surat_masuk: id }));
     }
 
     function handleSortTable(column, prop) {
@@ -356,7 +356,7 @@ export default {
         query.sort = order + "!" + column.prop;
       }
       Inertia.get(
-        route("restore.inbox.index"),
+        route("recycle.inbox.index"),
         {
           page: query.currentPage,
           search: search.value,
@@ -373,7 +373,7 @@ export default {
 
     function handleFilterSubmitted(v) {
       assignFilter(v, query.filterQuery, filterOption);
-      Inertia.get(route("restore.inbox.index"), {
+      Inertia.get(route("recycle.inbox.index"), {
         search: search.value,
         ...query.filterQuery,
         sort: query.sort,
@@ -389,7 +389,7 @@ export default {
       else isEmpty = true;
       if (query.filterQuery[tag.query].length <= 0) isEmpty = true;
       if (isEmpty) query.filterQuery = _.omit(query.filterQuery, tag.query);
-      Inertia.get(route("restore.inbox.index"), {
+      Inertia.get(route("recycle.inbox.index"), {
         search: search.value,
         ...query.filterQuery,
         sort: query.sort,
@@ -413,7 +413,7 @@ export default {
       }
       loadingTableMobile.value = true;
       await axios
-        .get(route("restore.inbox.index.json"), {
+        .get(route("recycle.inbox.index.json"), {
           params: {
             search: search.value,
             page: query.currentPage + 1,

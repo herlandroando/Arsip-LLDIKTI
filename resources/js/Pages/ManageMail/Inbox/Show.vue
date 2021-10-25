@@ -9,36 +9,44 @@
             </el-col>
             <el-col
               :span="24"
-              :md="{span:12,push:2}"
-              :lg="{span:10,push:2}"
+              :md="{ span: 12, push: 2 }"
+              :lg="{ span: 10, push: 2 }"
               style="margin-bottom: 20px"
             >
               <el-button-group>
-                <el-tooltip content="Ubah Surat" placement="top" effect="light">
-                  <el-button
-                    :type="editMode ? 'primary' : null"
-                    icon="el-icon-edit"
-                    @click="handleToggleEdit"
-                  ></el-button>
-                </el-tooltip>
-                <el-tooltip
+                <template v-if="canEdit()">
+                  <el-tooltip
+                    content="Ubah Surat"
+                    placement="top"
+                    effect="light"
+                  >
+                    <el-button
+                      :type="editMode ? 'primary' : null"
+                      icon="el-icon-edit"
+                      @click="handleToggleEdit"
+                    ></el-button>
+                  </el-tooltip>
+                </template>
+                <!-- <el-tooltip
                   content="Bagikan Surat"
                   placement="top"
                   effect="light"
                 >
                   <el-button icon="el-icon-share"></el-button>
-                </el-tooltip>
-                <el-tooltip
-                  content="Hapus Surat"
-                  placement="top"
-                  effect="light"
-                >
-                  <el-button
-                    @click="handleDialogWarnOpen"
-                    type="danger"
-                    icon="el-icon-delete"
-                  ></el-button>
-                </el-tooltip>
+                </el-tooltip> -->
+                <template v-if="canDelete()">
+                  <el-tooltip
+                    content="Hapus Surat"
+                    placement="top"
+                    effect="light"
+                  >
+                    <el-button
+                      @click="handleDialogWarnOpen"
+                      type="danger"
+                      icon="el-icon-delete"
+                    ></el-button>
+                  </el-tooltip>
+                </template>
               </el-button-group>
             </el-col>
           </el-row>
@@ -190,12 +198,15 @@
                 Tipe : {{ classificationFileType(file.tipe) }} <br />
                 Ukuran : {{ humanFileSize(file.ukuran) }}
               </div>
-              <el-button class="button" type="text">Download</el-button>
-              <el-button
+              <a :href="file.url" target="_blank">
+                <el-button class="button" type="text">Download</el-button></a
+              >
+              <a
                 v-if="classificationFileType(file.tipe) !== 'Tidak Diketahui'"
-                class="button"
-                type="text"
-                >Buka</el-button
+                :href="file.url + '?open=1'"
+                target="_blank"
+              >
+                <el-button class="button" type="text">Buka</el-button></a
               >
             </el-card>
           </template>
@@ -207,7 +218,7 @@
             :action="
               routes('manage.inbox.upload.file', { surat_masuk: formData.id })
             "
-            :headers="{ 'X-CSRF-TOKEN': csrf }"
+            :headers="{ 'X-XSRF-TOKEN': getXSRF() }"
             :on-error="handleErrorUpload"
             :on-remove="handleRemove"
             :on-success="handleSuccessUpload"
@@ -248,12 +259,17 @@
 
 <script>
 import { reactive, ref } from "@vue/reactivity";
-import { computed, inject, onMounted } from "@vue/runtime-core";
-import { defaultProps, initializationView } from "@shared/InertiaConfig.js";
+import { computed, inject, onMounted, onUpdated } from "@vue/runtime-core";
+import {
+  defaultProps,
+  initializationView,
+  getPermission,
+} from "@shared/InertiaConfig.js";
 import Layout from "@shared/Layout.vue";
 import {
   humanFileSize,
   classificationFileType,
+  getXSRF,
 } from "@shared/HelperFunction.js";
 import rules from "@rules/StoreInbox";
 import _ from "lodash";
@@ -274,12 +290,43 @@ export default {
     console.log(sifatSurat);
     const editMode = ref(false);
 
-    const csrf = inject("csrf");
+    // const csrf = inject("csrf");
     const limitUploadSize = "4096";
     const dialogWarnVisible = ref(false);
     const form = ref(null);
     const fileSurat = ref([]);
     const processingForm = ref(false);
+    const permission = getPermission(props);
+    const canDelete = () => {
+      if (permission.d_surat) {
+        return true;
+      }
+      if (
+        permission.d_miliksurat &&
+        props.detailData.id_pembuat == props._user.id
+      ) {
+        return true;
+      }
+
+      return false;
+    };
+    const canEdit = () => {
+    //   console.log(
+    //     "canEdit",
+    //     permission.w_suratmasuk,
+    //     props.detailData.id_pembuat == props._user.id,
+    //     permission.w_suratmasuk && permission.w_all_surat
+    //   );
+      if (permission.w_suratmasuk && permission.w_all_surat) {
+        return true;
+      }
+      if (
+        permission.w_suratmasuk &&
+        props.detailData.id_pembuat == props._user.id
+      )
+        return true;
+      return false;
+    };
 
     const tanggal_surat_computed = computed({
       get: () => formData.tanggal_surat,
@@ -313,6 +360,10 @@ export default {
       initData();
     });
 
+    onUpdated(() => {
+      initData();
+    });
+
     function initData(withFile = true) {
       if (!_.isEmpty(props.detailData)) {
         let data = props.detailData;
@@ -327,7 +378,7 @@ export default {
         formData.id_sifat = data.id_sifat;
         if (withFile) {
           optionalData.file_surat = _.isEmpty(data.file_surat)
-            ? false
+            ? []
             : data.file_surat;
           fileSurat.value = _.isEmpty(data.file_surat_form)
             ? []
@@ -489,7 +540,7 @@ export default {
       handleValidation,
       humanFileSize,
       classificationFileType,
-      csrf,
+      //   csrf,
       rules,
       sifatSurat,
       editMode,
@@ -500,13 +551,16 @@ export default {
       optionalData,
       processingForm,
       dialogWarnVisible,
+      permission,
+      canDelete,
+      canEdit,
+      getXSRF,
     };
   },
 };
 </script>
 
 <style scoped>
-
 .box-card {
   margin: 30px 0;
 }

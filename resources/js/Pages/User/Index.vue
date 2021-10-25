@@ -59,7 +59,7 @@
       <el-row type="flex" class="width-100">
         <el-col :span="18">
           <el-form @submit.prevent="handleSearch">
-            <p>Cari Surat Masuk</p>
+            <p>Cari Pengguna</p>
             <el-row type="flex" align="center" :gutter="40">
               <el-col :span="18">
                 <el-form-item>
@@ -79,10 +79,11 @@
         </el-col>
         <el-col :offset="1" :span="5" class="text-center">
           <el-button
+            v-if="permission.admin"
             @click="handleAddUser"
             icon="el-icon-circle-plus-outline"
             type="primary"
-            >Tambah Surat</el-button
+            >Tambah User</el-button
           >
         </el-col>
       </el-row>
@@ -104,19 +105,9 @@
               :default-sort="q_sort"
               style="width: 100%"
             >
-              <el-table-column
-                prop="nip"
-                sortable="custom"
-                label="NIP"
-
-              >
+              <el-table-column prop="nip" sortable="custom" label="NIP">
               </el-table-column>
-              <el-table-column
-                prop="nama"
-                sortable="custom"
-                label="Nama"
-
-              >
+              <el-table-column prop="nama" sortable="custom" label="Nama">
               </el-table-column>
               <el-table-column
                 prop="jabatan"
@@ -129,19 +120,25 @@
                 <template #default="scope">
                   <el-button
                     size="mini"
-                    @click="handleDetailTable(scope.row.id,scope.row.username)"
+                    @click="handleDetailTable(scope.row.id, scope.row.username)"
                     >Detail</el-button
                   >
-                  <el-popconfirm
-                    title="Apakah anda yakin menghapus surat ini?"
-                    confirmButtonText="Iya"
-                    cancelButtonText="Tidak"
-                    @confirm="handleDeleteUser(scope.row.id,scope.row.username)"
+                  <template
+                    v-if="!scope.row.ijin.admin || permission.super_admin"
                   >
-                    <template #reference>
-                      <el-button size="mini" type="danger">Hapus</el-button>
-                    </template>
-                  </el-popconfirm>
+                    <el-popconfirm
+                      title="Apakah anda yakin menghapus surat ini?"
+                      confirmButtonText="Iya"
+                      cancelButtonText="Tidak"
+                      @confirm="
+                        handleDeleteUser(scope.row.id, scope.row.username)
+                      "
+                    >
+                      <template #reference>
+                        <el-button size="mini" type="danger">Hapus</el-button>
+                      </template>
+                    </el-popconfirm>
+                  </template>
                 </template>
               </el-table-column>
             </el-table>
@@ -195,16 +192,18 @@
           type="primary"
           >Lihat Detail</el-button
         >
-        <el-popconfirm
-          title="Apakah anda yakin menghapus surat ini?"
-          confirmButtonText="Iya"
-          cancelButtonText="Tidak"
-          @confirm="handleDeleteUser()"
-        >
-          <template #reference>
-            <el-button style="width: 100%" type="danger">Hapus</el-button>
-          </template>
-        </el-popconfirm>
+        <template v-if="!actionIjinSelected.admin || permission.super_admin">
+          <el-popconfirm
+            title="Apakah anda yakin menghapus surat ini?"
+            confirmButtonText="Iya"
+            cancelButtonText="Tidak"
+            @confirm="handleDeleteUser()"
+          >
+            <template #reference>
+              <el-button style="width: 100%" type="danger">Hapus</el-button>
+            </template>
+          </el-popconfirm>
+        </template>
         <el-button style="width: 100%" @click="actionDialogVisible = false"
           >Tutup</el-button
         >
@@ -216,7 +215,11 @@
 
 <script>
 import { Inertia } from "@inertiajs/inertia";
-import { defaultProps, initializationView } from "@shared/InertiaConfig.js";
+import {
+  defaultProps,
+  initializationView,
+  getPermission,
+} from "@shared/InertiaConfig.js";
 
 import { Failed, DeleteFilled, List } from "@element-plus/icons";
 
@@ -270,10 +273,12 @@ export default {
       sort: "",
       filterQuery: props.q_filter,
     });
+    const permission = getPermission(props);
     //=== Mobile =====
     const tableDataMobile = ref(props.tableData);
     const actionDialogVisible = ref(false);
     const actionIdSelected = ref();
+    const actionIjinSelected = ref();
     const actionUsernameSelected = ref();
     const loadingTableMobile = ref(false);
     const limitTableMobile = ref(false);
@@ -314,19 +319,23 @@ export default {
       );
     }
 
-    function handleDeleteUser(id = "",username="") {
+    function handleDeleteUser(id = "", username = "") {
       if (id === "") {
         id = actionIdSelected.value;
       }
       actionDialogVisible.value = false;
-      Inertia.delete(route("setting.users.destroy", { user: id,username:username }));
+      Inertia.delete(
+        route("setting.users.destroy", { user: id, username: username })
+      );
     }
-    function handleDetailTable(id = "",username="") {
+    function handleDetailTable(id = "", username = "") {
       if (id === "") {
         id = actionIdSelected.value;
       }
       actionDialogVisible.value = false;
-      Inertia.get(route("setting.users.show", { user: id,username:username}));
+      Inertia.get(
+        route("setting.users.show", { user: id, username: username })
+      );
     }
     function handleAddUser() {
       Inertia.get(route("setting.users.create"));
@@ -385,6 +394,7 @@ export default {
       //   console.log(row, column, event);
       actionIdSelected.value = row.id;
       actionUsernameSelected.value = row.username;
+      actionIjinSelected.value = row.ijin;
       actionDialogVisible.value = true;
       console.log(actionDialogVisible.value, actionIdSelected.value);
     }
@@ -442,6 +452,7 @@ export default {
       actionDialogVisible,
       actionUsernameSelected,
       actionIdSelected,
+      actionIjinSelected,
       search,
       totalPage,
       filterOption,
@@ -450,6 +461,7 @@ export default {
       loadingTableMobile,
       useMq,
       query,
+      permission,
     };
   },
 };
@@ -460,5 +472,4 @@ export default {
   margin-top: 30px;
   margin-bottom: 80px;
 }
-
 </style>

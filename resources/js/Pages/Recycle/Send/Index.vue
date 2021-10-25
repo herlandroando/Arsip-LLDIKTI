@@ -166,8 +166,8 @@
                 <template #default="scope">
                   <el-button
                     size="mini"
-                    @click="handleDetailTable(scope.row.id)"
-                    >Detail</el-button
+                    @click="handleRestoreMail(scope.row.id)"
+                    >Pulihkan</el-button
                   >
                   <el-popconfirm
                     title="Apakah anda yakin menghapus surat ini?"
@@ -226,8 +226,8 @@
     </template>
     <el-dialog title="Aksi" v-model="actionDialogVisible" width="80%" center>
       <el-space :fill="true" alignment="center" style="width: 100%">
-        <el-button style="width: 100%" @click="handleDetailTable()"
-          >Lihat Detail</el-button
+        <el-button style="width: 100%" @click="handleRestoreMail()"
+          >Pulihkan</el-button
         >
         <el-popconfirm
           title="Apakah anda yakin menghapus surat ini?"
@@ -321,7 +321,7 @@ export default {
         cancelTokenPage.value.cancel();
       }
       Inertia.get(
-        route("restore.send.index"),
+        route("recycle.send.index"),
         {
           page: query.currentPage,
           search: search.value,
@@ -341,7 +341,7 @@ export default {
     }
     function handleSearch() {
       Inertia.get(
-        route("restore.send.index"),
+        route("recycle.send.index"),
         { search: search.value, ...query.filterQuery, sort: query.sort },
         {
           onCancelToken: (cancelToken) => (cancelTokenPage.value = cancelToken),
@@ -355,14 +355,14 @@ export default {
         id = actionIdSelected.value;
       }
       actionDialogVisible.value = false;
-      Inertia.delete(route("restore.send.destroy", { surat_keluar: id }));
+      Inertia.delete(route("recycle.send.destroy", { surat_keluar: id }));
     }
     function handleRestoreMail(id = "") {
       if (id === "") {
         id = actionIdSelected.value;
       }
       actionDialogVisible.value = false;
-      Inertia.get(route("restore.send.restore", { surat_keluar: id }));
+      Inertia.put(route("recycle.send.restore", { surat_keluar: id }));
     }
 
     function handleSortTable(column, prop) {
@@ -374,7 +374,7 @@ export default {
         query.sort = order + "!" + column.prop;
       }
       Inertia.get(
-        route("restore.send.index"),
+        route("recycle.send.index"),
         {
           page: query.currentPage,
           search: search.value,
@@ -391,7 +391,7 @@ export default {
 
     function handleFilterSubmitted(v) {
       assignFilter(v, query.filterQuery, filterOption);
-      Inertia.get(route("restore.send.index"), {
+      Inertia.get(route("recycle.send.index"), {
         search: search.value,
         ...query.filterQuery,
         sort: query.sort,
@@ -407,7 +407,7 @@ export default {
       else isEmpty = true;
       if (query.filterQuery[tag.query].length <= 0) isEmpty = true;
       if (isEmpty) query.filterQuery = _.omit(query.filterQuery, tag.query);
-      Inertia.get(route("restore.send.index"), {
+      Inertia.get(route("recycle.send.index"), {
         search: search.value,
         ...query.filterQuery,
         sort: query.sort,
@@ -431,7 +431,7 @@ export default {
       }
       loadingTableMobile.value = true;
       await axios
-        .get(route("restore.send.index.json"), {
+        .get(route("recycle.send.index.json"), {
           params: {
             search: search.value,
             page: query.currentPage + 1,

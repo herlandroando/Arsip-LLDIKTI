@@ -13,13 +13,19 @@
           >
             <!-- <el-col :span="24"> -->
             <el-form-item label="Perihal" prop="perihal">
-              <el-input v-model="formData.perihal" placeholder="Isi perihal surat"></el-input>
+              <el-input
+                v-model="formData.perihal"
+                placeholder="Isi perihal surat"
+              ></el-input>
             </el-form-item>
             <!-- </el-col> -->
             <el-row :gutter="20">
               <el-col :span="24" :sm="12">
                 <el-form-item label="Asal Surat" prop="asal_surat">
-                  <el-input v-model="formData.asal_surat"  placeholder="Isi asal surat"></el-input>
+                  <el-input
+                    v-model="formData.asal_surat"
+                    placeholder="Isi asal surat"
+                  ></el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="24" :sm="12">
@@ -50,16 +56,21 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="24" :sm="12">
-              </el-col>
+              <el-col :span="24" :sm="12"> </el-col>
               <el-col :span="24" :sm="12">
                 <el-form-item label="No. Surat" prop="no_surat">
-                  <el-input  placeholder="Isi nomor surat" v-model="formData.no_surat"></el-input>
+                  <el-input
+                    placeholder="Isi nomor surat"
+                    v-model="formData.no_surat"
+                  ></el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="24" :sm="12">
                 <el-form-item label="No. Agenda" prop="no_agenda">
-                  <el-input  placeholder="Isi nomor agenda" v-model="formData.no_agenda"></el-input>
+                  <el-input
+                    placeholder="Isi nomor agenda"
+                    v-model="formData.no_agenda"
+                  ></el-input>
                 </el-form-item>
               </el-col>
               <el-col>
@@ -87,15 +98,15 @@
           </el-form>
         </el-card>
       </el-col>
-      <el-col :span="24" :sm="12">
+      <el-col :span="24" :sm="12" class="upload-container">
         <el-card class="box-card">
           <h4>Dokumen Surat</h4>
           <el-upload
             class="upload-demo"
             :action="routes('manage.inbox.upload.temp')"
-            :headers="{ 'X-CSRF-TOKEN': csrf }"
             :on-preview="handlePreview"
             :on-error="handleErrorUpload"
+            :headers="{'X-XSRF-TOKEN':getXSRF()}"
             :on-remove="handleRemove"
             :on-success="handleSuccessUpload"
             :limit="4"
@@ -106,7 +117,8 @@
             <el-button size="small" type="primary">Click to upload</el-button>
             <template #tip>
               <div class="el-upload__tip">
-                Hanya file gambar (jpg, png, gif), dokumen (doc, docx, pdf, odt), dan file harus dibawah 4 MB.
+                Hanya file gambar (jpg, png, gif), dokumen (doc, docx, pdf,
+                odt), dan file harus dibawah 4 MB.
               </div>
             </template>
           </el-upload>
@@ -125,6 +137,7 @@ import { ElNotification } from "element-plus";
 import {
   humanFileSize,
   classificationFileType,
+  getXSRF,
 } from "@shared/HelperFunction.js";
 import _ from "lodash";
 import axios from "axios";
@@ -153,13 +166,13 @@ export default {
     const formData = reactive({
       perihal: "",
       tanggal_surat: "",
-      no_agenda:"",
+      no_agenda: "",
       no_surat: "",
       asal_surat: "",
       isi_ringkas: "",
       id_sifat: "",
     });
-    const csrf = inject("csrf");
+    // const csrf = inject("csrf");
     const limitUploadSize = "4096";
 
     const form = ref(null);
@@ -272,8 +285,8 @@ export default {
     }
     function handleRemove(file, fileList) {
       console.log("before remove", fileSurat.value, file);
-      if (file.id === undefined){
-          return false;
+      if (file.id === undefined) {
+        return false;
       }
       axios
         .post(route("manage.inbox.delete.temp"), { id: file.id })
@@ -302,15 +315,15 @@ export default {
       console.log(file);
     }
     function handleExceed(files, fileList) {
-      this.$message.warning(
-        `The limit is 3, you selected ${
-          files.length
-        } files this time, add up to ${files.length + fileList.length} totally`
-      );
+      ElNotification({
+        type: "error",
+        title: "Limit Upload",
+        message: "Anda telah mencapai limit file yang dapat di upload.",
+      });
     }
 
-    function dateNowAndBefore(time){
-          return time.getTime() > Date.now()
+    function dateNowAndBefore(time) {
+      return time.getTime() > Date.now();
     }
     // function beforeRemove(file, fileList) {
     //   return this.$confirm(`Cancel the transfert of ${file.name} ?`);
@@ -332,18 +345,24 @@ export default {
       handleSubmitForm,
       processingForm,
       tanggal_surat_computed,
+      getXSRF,
       //   handleUpload,
       //   beforeRemove,
       formData,
       form,
       fileSurat,
       optionalData,
-      csrf,
+    //   csrf,
       rules,
     };
   },
 };
 </script>
 
-<style>
+<style scoped>
+@media only screen and (max-width: 768px) {
+  .upload-container {
+    margin: 40px 0px;
+  }
+}
 </style>

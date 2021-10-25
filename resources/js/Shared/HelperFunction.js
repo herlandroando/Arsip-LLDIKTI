@@ -87,8 +87,35 @@ export function truncateString(string, max = 25) {
         'length': max,
         'separator': /[.]/
     });
-
 }
+
+export function dateToString(format = "", withTime = true) {
+    let date = new Date(format);
+    let option = { dateStyle: "full" }
+    if (withTime) {
+        option["timeStyle"] = "short"
+    }
+    return date.toLocaleString("id-ID", {
+        dateStyle: "full",
+        timeStyle: "short",
+    })
+}
+
+export function getXSRF() {
+    let name = 'XSRF-TOKEN' + "=";
+    let ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) == ' ') {
+            c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+            return c.substring(name.length, c.length).replace('%3D','=');
+        }
+    }
+    return "";
+}
+
 
 // console.log(humanFileSize(1551859712)); // 1.4 GiB
 // console.log(humanFileSize(5000, true)); // 5.0 kB

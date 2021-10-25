@@ -55,7 +55,7 @@
               </el-col>
             </template>
           </div>
-          <div class="activity-footer-bar">
+          <div class="activity-footer-bar" v-if="canSend">
             <el-form
               :rules="rulesActivity"
               label-position="top"
@@ -101,31 +101,42 @@
               style="margin-bottom: 20px"
             >
               <el-button-group>
-                <el-tooltip content="Ubah Surat" placement="top" effect="light">
-                  <el-button
-                    :type="editMode ? 'primary' : null"
-                    icon="el-icon-edit"
-                    @click="handleToggleEdit"
-                  ></el-button>
-                </el-tooltip>
-                <el-tooltip
+                <template
+                  v-if="canEdit()
+                  "
+                >
+                  <el-tooltip
+                    content="Ubah Surat"
+                    placement="top"
+                    effect="light"
+                  >
+                    <el-button
+                      :type="editMode ? 'primary' : null"
+                      icon="el-icon-edit"
+                      @click="handleToggleEdit"
+                    ></el-button>
+                  </el-tooltip>
+                </template>
+                <!-- <el-tooltip
                   content="Bagikan Surat"
                   placement="top"
                   effect="light"
                 >
                   <el-button icon="el-icon-share"></el-button>
-                </el-tooltip>
-                <el-tooltip
-                  content="Hapus Surat"
-                  placement="top"
-                  effect="light"
-                >
-                  <el-button
-                    @click="handleDialogWarnOpen"
-                    type="danger"
-                    icon="el-icon-delete"
-                  ></el-button>
-                </el-tooltip>
+                </el-tooltip> -->
+                <template v-if="canDelete()">
+                  <el-tooltip
+                    content="Hapus Surat"
+                    placement="top"
+                    effect="light"
+                  >
+                    <el-button
+                      @click="handleDialogWarnOpen"
+                      type="danger"
+                      icon="el-icon-delete"
+                    ></el-button>
+                  </el-tooltip>
+                </template>
               </el-button-group>
             </el-col>
           </el-row>
@@ -198,7 +209,7 @@
                   <el-input
                     readonly
                     :disabled="editMode"
-                    v-model="formData.no_disposisi"
+                    v-model="optionalData.tujuan"
                   ></el-input>
                 </el-form-item>
               </el-col>
@@ -274,6 +285,54 @@
                 >
                   Ubah
                 </el-button>
+                <el-button
+                  v-if="
+                    !editMode &&
+                    optionalData.status == 'Belum Diproses' &&
+                    _user.id_jabatan == optionalData.id_jabatan
+                  "
+                  type="primary"
+                  :loading="processingForm"
+                  @click="handleUpdateStatus('Sedang Diproses')"
+                >
+                  Diproses
+                </el-button>
+                <el-button
+                  v-if="
+                    !editMode &&
+                    (optionalData.status == 'Sedang Diproses' ||
+                      optionalData.status == 'Revisi') &&
+                    _user.id_jabatan == optionalData.id_jabatan
+                  "
+                  type="primary"
+                  :loading="processingForm"
+                  @click="handleUpdateStatus('Ditinjau')"
+                >
+                  Ditinjau
+                </el-button>
+                <el-button
+                  v-if="
+                    !editMode &&
+                    optionalData.status == 'Ditinjau' &&
+                    _user.id == optionalData.id_pengirim
+                  "
+                  type="primary"
+                  :loading="processingForm"
+                  @click="handleUpdateStatus('Selesai')"
+                >
+                  Selesai
+                </el-button>
+                <el-button
+                  v-if="
+                    !editMode &&
+                    optionalData.status == 'Ditinjau' &&
+                    _user.id == optionalData.id_pengirim
+                  "
+                  :loading="processingForm"
+                  @click="handleUpdateStatus('Revisi')"
+                >
+                  Direvisi
+                </el-button>
               </el-col>
             </el-row>
           </el-form>
@@ -303,8 +362,12 @@
 import { Link } from "@inertiajs/inertia-vue3";
 
 import { reactive, ref } from "@vue/reactivity";
-import { computed, inject, onMounted } from "@vue/runtime-core";
-import { defaultProps, initializationView } from "@shared/InertiaConfig.js";
+import { computed, inject, onMounted, onUpdated } from "@vue/runtime-core";
+import {
+  defaultProps,
+  initializationView,
+  getPermission,
+} from "@shared/InertiaConfig.js";
 import Layout from "@shared/Layout.vue";
 import { dateNowAndAfter } from "@shared/HelperFunction.js";
 import rulesActivity from "@rules/ActivityDisposisi";
@@ -339,7 +402,6 @@ export default {
         return rulesWithoutInbox;
       }
     });
-    const csrf = inject("csrf");
     // const limitUploadSize = "4096";
     const dialogWarnVisible = ref(false);
     const form = ref(null);
@@ -348,6 +410,40 @@ export default {
     const listSuratMasuk = ref([]);
     const processingForm = ref(false);
     const processingInputRequest = ref(false);
+    const permission = getPermission(props);
+    const canSend = computed(() => {
+      let valid_user =
+        props._user.id == props.detailData.id_pengirim ||
+        optionalData.id_jabatan == props._user.id_jabatan;
+      let valid_status =
+        ["Ditinjau", "Selesai", "Berakhir"].indexOf(props.detailData.id) == -1;
+      return valid_user && valid_status;
+    });
+    const canDelete = () => {
+      if (permission.d_surat) {
+        return true;
+      }
+      if (
+        permission.d_miliksurat &&
+        props.detailData.id_pengirim == props._user.id
+      ) {
+        return true;
+      }
+
+      return false;
+    };
+
+    const canEdit = () => {
+      if (permission.w_disposisi && permission.w_all_surat) {
+        return true;
+      }
+      if (
+        permission.w_disposisi &&
+        props.detailData.id_pembuat == props._user.id
+      )
+        return true;
+      return false;
+    };
     const activityFormData = reactive({
       keterangan: "",
     });
@@ -364,13 +460,19 @@ export default {
     const optionalData = reactive({
       status: "",
       pengirim: "",
+      id_pengirim: "",
       tujuan: "",
       tanggal_buat: "",
       tanggal_ubah: "",
       id_suratmasuk: "",
+      id_jabatan: "",
     });
 
     onMounted(() => {
+      initData();
+    });
+
+    onUpdated(() => {
       initData();
     });
 
@@ -382,14 +484,16 @@ export default {
         formData.is_suratmasuk = data.is_suratmasuk;
         formData.no_suratmasuk = data.no_suratmasuk;
         formData.no_disposisi = data.no_disposisi;
-        formData.tenggat_waktu = data.tenggat_waktu;
+        formData.tenggat_waktu = new Date(data.tenggat_waktu);
         formData.isi = data.isi;
         optionalData.id_suratmasuk = data.id_suratmasuk;
+        optionalData.id_pengirim = data.id_pengirim;
+        optionalData.id_jabatan = data.id_jabatan;
         optionalData.status = data.status;
         optionalData.pengirim = data.pengirim;
         optionalData.tujuan = data.tujuan;
-        optionalData.tanggal_buat = data.tanggal_buat;
-        optionalData.tanggal_ubah = data.tanggal_ubah;
+        optionalData.tanggal_buat = new Date(data.tanggal_buat);
+        optionalData.tanggal_ubah = new Date(data.tanggal_ubah);
       }
       if (!_.isEmpty(props.activityData)) {
         listActivity.value = props.activityData;
@@ -441,6 +545,30 @@ export default {
       }
     }
 
+    async function handleUpdateStatus(value) {
+      Inertia.put(
+        route("manage.disposisi.status.update", { disposisi: formData.id }),
+        { status: value },
+        {
+          preserveState: true,
+          onBefore: (visit) => {
+            console.log("before visit", visit);
+            processingForm.value = true;
+          },
+          onSuccess: (page) => {
+            console.log("success visit", page);
+          },
+          onError: (errors) => {
+            console.log("error visit", errors);
+          },
+          onFinish: (visit) => {
+            console.log("finish visit", visit);
+            processingForm.value = false;
+          },
+        }
+      );
+    }
+
     async function handleListSuratMasuk(value) {
       processingInputRequest.value = true;
       await axios
@@ -466,8 +594,8 @@ export default {
       });
       if (is_valid) {
         Inertia.post(
-          route("manage.disposisi.activity", { disposisi: formData.id }),
-          formData,
+          route("manage.disposisi.activity.create", { disposisi: formData.id }),
+          activityFormData,
           {
             preserveState: true,
             onBefore: (visit) => {
@@ -511,15 +639,16 @@ export default {
       handleDialogWarnConfirm,
       handleDialogWarnOpen,
       handleSubmitForm,
+      handleUpdateStatus,
       handleSubmitMessage,
       handleListSuratMasuk,
-      csrf,
       rulesWithInbox,
       rulesWithoutInbox,
       ruleComputed,
       rulesActivity,
       //   sifatSurat,
       editMode,
+      canEdit,
       form,
       activityForm,
       activityFormData,
@@ -531,6 +660,9 @@ export default {
       processingForm,
       processingInputRequest,
       dialogWarnVisible,
+      permission,
+      canDelete,
+      canSend,
     };
   },
 };

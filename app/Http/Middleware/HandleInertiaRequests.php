@@ -42,12 +42,15 @@ class HandleInertiaRequests extends Middleware
         $settings = PengaturanUmum::where("nama", "!=", "update_terakhir")->get()->makeHidden("id");
         $user = $request->user();
         if (!empty($user)) {
+            $ijin = $user->jabatan->ijin->toArray();
+            $ijin["super_admin"] = $user->id == 1;
             $user_result = [
                 "id" => $user->id,
                 "nama" => $user->nama,
                 "username" => $user->username,
+                "id_jabatan" => $user->id_jabatan,
                 "jabatan" => $user->jabatan->nama,
-                "ijin" => $user->jabatan->ijin,
+                "ijin" => $ijin,
             ];
         }
         return array_merge(parent::share($request), [

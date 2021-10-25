@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Setting;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Toast;
+use App\Models\Jabatan;
 use App\Models\User;
 use App\Traits\HasManageableTableQuery;
 use App\Traits\HasGetFilterList;
@@ -81,15 +82,39 @@ class UserController extends Controller
         // dd($user);
         if ($user->isNotEmpty()) {
             $this->setPaginate($user);
+
             $data = $user->map(function ($item, $key) {
+                $ijin = $item->jabatan->ijin;
+
+                if (empty($ijin)) {
+                    $result_ijin = [
+                        "r_surat" => false,
+                        "r_all_disposisi" => false,
+                        "r_laporan" => false,
+                        "d_surat" => false,
+                        "d_miliksurat" => false,
+                        "dp_surat" => false,
+                        "w_disposisi" => false,
+                        "w_suratmasuk" => false,
+                        "w_suratkeluar" => false,
+                        "admin" => false,
+                        "super_admin" => false,
+                    ];
+                } else {
+                    $result_ijin = $ijin->toArray();
+                    $result_ijin["super_admin"] = $item->id == 1;
+                }
+
                 return [
                     "id"            => $item->id,
                     "nama"          => $item->nama,
                     "username"      => $item->username,
                     "nip"           => $item->nip,
                     "jabatan"       => $item->jabatan->nama,
+                    "ijin"         => $result_ijin,
                 ];
             });
+
             $this->setData("tableData", $data);
             $this->setData("isAvailable", true);
         } else {
@@ -116,6 +141,7 @@ class UserController extends Controller
         if ($user->isEmpty()) {
             $result["empty"] = true;
         }
+
         $result["lastPage"]     = $user->lastPage();
         $result["currentPage"]  = $user->currentPage();
 
@@ -124,12 +150,34 @@ class UserController extends Controller
             $result["empty"] = false;
         }
         $data = $user->map(function ($item, $key) {
+            $ijin = $item->jabatan->ijin;
+
+            if (empty($ijin)) {
+                $result_ijin = [
+                    "r_surat" => false,
+                    "r_all_disposisi" => false,
+                    "r_laporan" => false,
+                    "d_surat" => false,
+                    "d_miliksurat" => false,
+                    "dp_surat" => false,
+                    "w_disposisi" => false,
+                    "w_suratmasuk" => false,
+                    "w_suratkeluar" => false,
+                    "admin" => false,
+                    "super_admin" => false,
+                ];
+            } else {
+                $result_ijin = $ijin->toArray();
+                $result_ijin["super_admin"] = $item->id == 1;
+            }
+
             return [
                 "id"            => $item->id,
                 "nama"          => $item->nama,
                 "username"      => $item->username,
                 "nip"           => $item->nip,
                 "jabatan"       => $item->jabatan->nama,
+                "ijin"          => $result_ijin
             ];
         });
         $result["result"] = $data;
@@ -144,6 +192,12 @@ class UserController extends Controller
     public function create(Request $request)
     {
         $this->setTitle("Buat Pengguna", true);
+        if (request()->user()->id != 1) {
+            $jabatan = DB::table("jabatan")->where("ijin.admin", "!=", 1)->join("ijin", "ijin.id", "=", "jabatan.id_ijin")->select(["jabatan.id", "jabatan.nama"])->get();
+        } else {
+            $jabatan = DB::table("jabatan")->select(["id", "nama"])->get();
+        }
+        $this->setData("listJabatan", $jabatan);
         return $this->runInertia("User/Create");
     }
 
@@ -155,22 +209,36 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        $is_super_admin = $request->user()->id == 1 ?? 0;
+        // $is_admin = $request->user()->jabatan->ijin->admin == 1 ?? 0;
         $input = $request->input();
         $validator = Validator::make($input, [
-            "username" => "required|string|unique:user,username|min:3|max:70",
+            "username" => "required|string|min:3|max:70|regex:/^[0-9A-Za-z.\-_]+$/",
             "password" => "required|string|min:8|max:50",
+            "cpassword" => "required|string|min:8|max:50|same:password",
             "nama" => "required|string|max:255",
             "nip" => "required|string|size:18",
             "no_telepon" => "required|string|min:8|max:18",
             "id_jabatan" => "required|exists:jabatan,id",
         ]);
+        // dd($validator->errors(), $validator->fails());
         if ($validator->fails()) {
             $toast = Toast::error("Gagal", "Terjadi kesalahan format pada data form yang dimasukkan.");
             return $this->redirectInertia(route("setting.users.create"), $toast);
         }
+
+        if ($input['id_jabatan'] == 1 && !$is_super_admin) {
+            $toast = Toast::error("Gagal", "Anda tidak diijinkan untuk melakukan tindakan ini.");
+            return $this->redirectInertia(route("setting.users.create"), $toast);
+        }
+        $user = User::where("username", $input["username"])->first();
+        if (!empty($user)) {
+            $toast = Toast::error("Gagal", "Username yang anda masukkan telah dipakai.");
+            return $this->redirectInertia(route("setting.users.create"), $toast);
+        }
         DB::beginTransaction();
         $user                = new User;
-        $user->username      = $input["perihal"];
+        $user->username      = strtolower($input["username"]);
         $user->password      = bcrypt($input["password"]);
         $user->nama          = $input["nama"];
         $user->nip           = $input["nip"];
@@ -181,9 +249,9 @@ class UserController extends Controller
 
         $toast = Toast::success("Sukses", "Berhasil menambahkan pengguna!");
 
-        session(["temp_file" => null]);
+        // session(["temp_file" => null]);
 
-        return $this->redirectInertia(route("setting.users.show", ["user" => $user->id]), $toast);
+        return $this->redirectInertia(route("setting.users.show", ["user" => $user->id, "username" => $user->username]), $toast);
         // perihal: "",
         // tanggal_surat: "",
         // no_surat: "",
@@ -201,20 +269,47 @@ class UserController extends Controller
      */
     public function show(User $user, $username)
     {
-        if($user->username === $username){
+        if ($user->username === $username) {
             $this->redirectInertia("404");
         }
-        // dd($user->user, $user);
+        $ijin = $user->jabatan->ijin;
+        if (empty($ijin)) {
+            $result_ijin = [
+                "nama" => "Tidak Terdefinisi",
+                "r_surat" => false,
+                "r_all_disposisi" => false,
+                "r_laporan" => false,
+                "d_surat" => false,
+                "d_miliksurat" => false,
+                "dp_surat" => false,
+                "w_disposisi" => false,
+                "w_suratmasuk" => false,
+                "w_all_surat" => false,
+                "w_suratkeluar" => false,
+                "admin" => false,
+                "super_admin" => false,
+            ];
+        } else {
+            $result_ijin = $ijin->toArray();
+            $result_ijin["super_admin"] = $user->id == 1;
+        }
+
         $data = [
             "id"             => $user->id,
-            "username"       => $user->username,
+            "username"       => strtolower($user->username),
             "nama"           => $user->nama,
             "nip"            => $user->nip,
             "no_telepon"     => $user->no_telpon,
             "id_jabatan"     => $user->id_jabatan,
             "jabatan"        => $user->jabatan->nama,
-            // "foto"           => $user->path_photo
+            "ijin"           => $result_ijin
         ];
+        if (request()->user()->id != 1) {
+            $jabatan = DB::table("jabatan")->where("ijin.admin", "!=", 1)->join("ijin", "ijin.id", "=", "jabatan.id_ijin")->select(["jabatan.id", "jabatan.nama"])->get();
+        } else {
+            $jabatan = DB::table("jabatan")->select(["id", "nama"])->get();
+        }
+        $this->setData("listJabatan", $jabatan);
 
         $this->setTitle("Detail Pengguna", true);
         $this->setData("detailData", $data);
@@ -239,40 +334,56 @@ class UserController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, User $user,$username)
+    public function update(Request $request, User $user, $username)
     {
-        $is_admin = $request->user()->jabatan->ijin->id == 1;
-        if($user->username === $username){
+        $is_super_admin = $request->user()->id == 1 ?? 0;
+        $is_admin = $request->user()->jabatan->ijin->admin == 1 ?? 0;
+        if ($user->username != $username) {
             $this->redirectInertia("404");
         }
+        if ($user->jabatan->id == 1 && $is_admin) {
+            $toast = Toast::error("Gagal", "Anda tidak diijinkan untuk melakukan tindakan ini.");
+            return $this->redirectInertia(route("setting.users.show", ["user" => $user->id, "username" => $user->username]), $toast);
+        }
         $input = $request->input();
-        if ($is_admin){
-            $rules=[
+        if ($is_admin) {
+            $rules = [
                 "nama" => "required|string|max:254",
                 "nip" => "required|string|size:18",
                 "no_telepon" => "required|string|max:18|min:10",
-                "id_jabatan" => "required|exists:jabatan,id_jabatan",
+                "id_jabatan" => "required|exists:jabatan,id",
+                "username" => "required|regex:/^[0-9A-Za-z.\-_]+$/|min:3|max:70"
             ];
-        }
-        else{
-            $rules=[
+        } else {
+            $rules = [
                 "nama" => "required|string|max:254",
                 "nip" => "required|date|before_or_equal:now",
                 "no_telepon" => "required|string|max:18|min:10",
             ];
         }
         $validator = Validator::make($input, $rules);
-
         if ($validator->fails()) {
             $toast = Toast::error("Gagal", "Terjadi kesalahan format pada data form yang dimasukkan.");
-            return $this->redirectInertia(route("user.show", ["user" => $user->id]), $toast);
+            return $this->redirectInertia(route("setting.users.show", ["user" => $user->id, "username" => $user->username]), $toast);
         }
+
+        if ($input['id_jabatan'] == 1 && !$is_super_admin) {
+            $toast = Toast::error("Gagal", "Anda tidak diijinkan untuk melakukan tindakan ini.");
+            return $this->redirectInertia(route("setting.users.show", ["user" => $user->id, "username" => $user->username]), $toast);
+        }
+        $username_same = User::where("username", $input["username"])->first();
+        if (!empty($username_same) && $username_same->id != $user->id) {
+            $toast = Toast::error("Gagal", "Username yang anda masukkan telah dipakai.");
+            return $this->redirectInertia(route("setting.users.show", ["user" => $user->id, "username" => $user->username]), $toast);
+        }
+
 
         DB::beginTransaction();
         $user->nama          = $input["nama"];
         $user->nip           = $input["nip"];
         $user->no_telpon     = $input["no_telepon"];
-        if ($is_admin){
+        if ($is_admin) {
+            $user->username   = strtolower($input["username"]);
             $user->id_jabatan = $input["id_jabatan"];
         }
         $user->save();
@@ -283,7 +394,42 @@ class UserController extends Controller
             $toast = Toast::success("Sukses", "Tidak ada yang berubah.");
         }
 
-        return $this->redirectInertia(route("user.show", ["user" => $user->id]), $toast);
+        return $this->redirectInertia(route("setting.users.show", ["user" => $user->id, "username" => $user->username]), $toast);
+    }
+
+    public function updatePassword(Request $request, User $user, $username)
+    {
+        $is_super_admin = $request->user()->id == 1 ?? 0;
+        $is_admin = $request->user()->jabatan->ijin->admin == 1 ?? 0;
+        if ($user->username != $username) {
+            $this->redirectInertia("404");
+        }
+        if ($user->jabatan->id == 1 && $is_admin) {
+            $toast = Toast::error("Gagal", "Anda tidak diijinkan untuk melakukan tindakan ini.");
+            return $this->redirectInertia(route("setting.users.show", ["user" => $user->id, "username" => $user->username]), $toast);
+        }
+        $input = $request->input();
+        $rules = [
+            "password" => "required|string|min:8|max:50",
+            "cpassword" => "required|string|min:8|max:50|same:password",
+        ];
+        $validator = Validator::make($input, $rules);
+        if ($validator->fails()) {
+            $toast = Toast::error("Gagal", "Terjadi kesalahan format pada data form yang dimasukkan.");
+            return $this->redirectInertia(route("setting.users.show", ["user" => $user->id, "username" => $user->username]), $toast);
+        }
+
+        DB::beginTransaction();
+        $user->password      = bcrypt($input["password"]);
+        $user->save();
+        DB::commit();
+        if ($user->wasChanged()) {
+            $toast = Toast::success("Sukses", "Berhasil mengedit password pengguna!");
+        } else {
+            $toast = Toast::success("Sukses", "Tidak ada yang berubah.");
+        }
+
+        return $this->redirectInertia(route("setting.users.show", ["user" => $user->id, "username" => $user->username]), $toast);
     }
 
     /**
@@ -292,12 +438,12 @@ class UserController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy(User $user,$username)
+    public function destroy(User $user, $username)
     {
-        if($user->username === $username){
+        if ($user->username === $username) {
             $this->redirectInertia("404");
         }
-        if ($user->jabatan->nama === "Administrator") {
+        if ($user->id == 1 || ($user->jabatan->id == 1 && request()->user()->id != 1)) {
             $toast = Toast::error("Gagal Menghapus", "Tindakan tidak di ijinkan.");
             return $this->redirectInertia(route("setting.users.index"), $toast);
         }
@@ -306,4 +452,54 @@ class UserController extends Controller
         return $this->redirectInertia(route("setting.users.index"), $toast);
     }
 
+    public function profile(User $user, $username)
+    {
+        if ($user->username === $username) {
+            $this->redirectInertia("404");
+        }
+        $ijin = $user->jabatan->ijin;
+        if (empty($ijin)) {
+            $result_ijin = [
+                "nama" => "Tidak Terdefinisi",
+                "r_surat" => false,
+                "r_all_disposisi" => false,
+                "r_laporan" => false,
+                "d_surat" => false,
+                "d_miliksurat" => false,
+                "dp_surat" => false,
+                "w_disposisi" => false,
+                "w_suratmasuk" => false,
+                "w_all_surat" => false,
+                "w_suratkeluar" => false,
+                "admin" => false,
+                "super_admin" => false,
+            ];
+        } else {
+            $result_ijin = $ijin->toArray();
+            $result_ijin["super_admin"] = $user->id == 1;
+        }
+
+        $data = [
+            "id"             => $user->id,
+            "username"       => strtolower($user->username),
+            "nama"           => $user->nama,
+            "nip"            => $user->nip,
+            "no_telepon"     => $user->no_telpon,
+            "id_jabatan"     => $user->id_jabatan,
+            "jabatan"        => $user->jabatan->nama,
+            "ijin"           => $result_ijin
+        ];
+        if (request()->user()->id != 1) {
+            $jabatan = DB::table("jabatan")->where("ijin.admin", "!=", 1)->join("ijin", "ijin.id", "=", "jabatan.id_ijin")->select(["jabatan.id", "jabatan.nama"])->get();
+        } else {
+            $jabatan = DB::table("jabatan")->select(["id", "nama"])->get();
+        }
+
+        $this->setData("listJabatan", $jabatan);
+
+        $this->setTitle("Detail Pengguna", true);
+        $this->setData("detailData", $data);
+        $this->setData("isProfile", true);
+        return $this->runInertia("User/Show");
+    }
 }

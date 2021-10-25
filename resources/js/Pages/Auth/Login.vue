@@ -10,19 +10,19 @@
               :src="routes('home') + '/images/logo.png'"
               alt="Logo LLDIKTI"
             />
-            <h2 class="hidden-md-and-down text-center">
+            <h2 class="hidden-md-and-down text-center text-title">
               Sistem Informasi Pengarsipan Surat LLDIKTI Wilayah XIV
             </h2>
-            <h4 class="hidden-sm-and-down hidden-lg-and-up text-center">
+            <h4 class="hidden-sm-and-down hidden-lg-and-up text-center text-title">
               Sistem Informasi Pengarsipan Surat LLDIKTI Wilayah XIV
             </h4>
           </el-col>
 
           <el-col class="hidden-md-and-up" :xs="14" :sm="14" :md="24">
-            <h4 class="hidden-md-and-up">
+            <h4 class="hidden-md-and-up text-title">
               Sistem Informasi Pengarsipan Surat LLDIKTI Wilayah XIV
             </h4>
-            <h2 class="hidden-sm-and-down">
+            <h2 class="hidden-sm-and-down text-title">
               Sistem Informasi Pengarsipan Surat LLDIKTI Wilayah XIV
             </h2>
           </el-col>
@@ -176,6 +176,9 @@ body {
 </style>
 
 <style scoped>
+.text-title{
+    margin: 0px 30px
+}
 .text-center {
   text-align: center;
 }

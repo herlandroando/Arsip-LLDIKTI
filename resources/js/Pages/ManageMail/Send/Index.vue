@@ -7,6 +7,15 @@
     <!-- For MOBILE - START -->
     <!-- <el-space v-if="useMq().current === 'xs'" wrap :size="16"> -->
     <template v-if="useMq().current === 'xs'">
+      <el-row class="text-center" style="margin-bottom:20px">
+        <el-button
+          v-if="permission.w_suratkeluar"
+          @click="handleAddMail"
+          icon="el-icon-circle-plus-outline"
+          type="primary"
+          >Tambah Surat</el-button
+        >
+      </el-row>
       <el-row>
         <filter-container
           :options="filterOption"
@@ -26,7 +35,7 @@
           <el-table-column type="expand">
             <template #default="scope">
               <p><b>Sifat Surat:</b> {{ scope.row.sifat }}</p>
-              <p><b>Tanggal Surat:</b> {{ scope.row.tanggal_surat }}</p>
+              <p><b>Tanggal Surat:</b> {{ dateToString(scope.row.tanggal_surat,false) }}</p>
               <p><b>Bagian:</b> {{ scope.row.asal_surat }}</p>
               <p>
                 <b>Pembuat: </b>
@@ -36,7 +45,8 @@
               </p>
             </template>
           </el-table-column>
-          <el-table-column label="No. Surat" width="130" prop="no_surat"> </el-table-column>
+          <el-table-column label="No. Surat" width="130" prop="no_surat">
+          </el-table-column>
           <el-table-column label="Perihal" prop="perihal"> </el-table-column>
         </el-table>
         <p v-if="loadingTableMobile">Mohon Menunggu...</p>
@@ -86,6 +96,7 @@
         </el-col>
         <el-col :offset="1" :span="5" class="text-center">
           <el-button
+            v-if="permission.w_suratkeluar"
             @click="handleAddMail"
             icon="el-icon-circle-plus-outline"
             type="primary"
@@ -121,7 +132,6 @@
                   {{
                     new Date(scope.row.tanggal_surat).toLocaleString("id-ID", {
                       dateStyle: "full",
-                      timeStyle: "short",
                     })
                   }}
                 </template>
@@ -169,16 +179,18 @@
                     @click="handleDetailTable(scope.row.id)"
                     >Detail</el-button
                   >
-                  <el-popconfirm
-                    title="Apakah anda yakin menghapus surat ini?"
-                    confirmButtonText="Iya"
-                    cancelButtonText="Tidak"
-                    @confirm="handleDeleteMail(scope.row.id)"
-                  >
-                    <template #reference>
-                      <el-button size="mini" type="danger">Hapus</el-button>
-                    </template>
-                  </el-popconfirm>
+                  <template v-if="canDelete(scope.row)">
+                    <el-popconfirm
+                      title="Apakah anda yakin menghapus surat ini?"
+                      confirmButtonText="Iya"
+                      cancelButtonText="Tidak"
+                      @confirm="handleDeleteMail(scope.row.id)"
+                    >
+                      <template #reference>
+                        <el-button size="mini" type="danger">Hapus</el-button>
+                      </template>
+                    </el-popconfirm>
+                  </template>
                 </template>
               </el-table-column>
             </el-table>
@@ -229,16 +241,18 @@
         <el-button style="width: 100%" @click="handleDetailTable()"
           >Lihat Detail</el-button
         >
-        <el-popconfirm
-          title="Apakah anda yakin menghapus surat ini?"
-          confirmButtonText="Iya"
-          cancelButtonText="Tidak"
-          @confirm="handleDeleteMail()"
-        >
-          <template #reference>
-            <el-button style="width: 100%">Hapus</el-button>
-          </template>
-        </el-popconfirm>
+        <template v-if="canDelete()">
+          <el-popconfirm
+            title="Apakah anda yakin menghapus surat ini?"
+            confirmButtonText="Iya"
+            cancelButtonText="Tidak"
+            @confirm="handleDeleteMail()"
+          >
+            <template #reference>
+              <el-button style="width: 100%">Hapus</el-button>
+            </template>
+          </el-popconfirm>
+        </template>
         <el-button
           style="width: 100%"
           @click="actionDialogVisible = false"
@@ -253,10 +267,14 @@
 
 <script>
 import { Inertia } from "@inertiajs/inertia";
-import { defaultProps, initializationView } from "@shared/InertiaConfig.js";
+import {
+  defaultProps,
+  initializationView,
+  getPermission,
+} from "@shared/InertiaConfig.js";
 
 import { Failed, DeleteFilled, List } from "@element-plus/icons";
-
+import {dateToString} from "@shared/HelperFunction"
 import Layout from "@shared/Layout";
 import { reactive, ref } from "@vue/reactivity";
 import { computed, inject } from "@vue/runtime-core";
@@ -268,6 +286,7 @@ import {
   assignFilter,
   defaultFilter,
   initializationFilter,
+
 } from "@shared/Filter/Helper";
 import axios from "axios";
 
@@ -307,10 +326,30 @@ export default {
       sort: "",
       filterQuery: props.q_filter,
     });
+    const permission = getPermission(props);
+    const canDelete = (row = false) => {
+      if (permission.d_surat) {
+        return true;
+      }
+      if (row === false) {
+        if (
+          permission.d_miliksurat &&
+          actionIdPembuatSelected.value == props._user.id
+        ) {
+          return true;
+        }
+      } else {
+        if (permission.d_miliksurat && row.id_pembuat == props._user.id) {
+          return true;
+        }
+      }
+      return false;
+    };
     //=== Mobile =====
     const tableDataMobile = ref(props.tableData);
     const actionDialogVisible = ref(false);
     const actionIdSelected = ref();
+    const actionIdPembuatSelected = ref();
     const loadingTableMobile = ref(false);
     const limitTableMobile = ref(false);
     const mq = useMq();
@@ -421,6 +460,7 @@ export default {
       //   console.log(row, column, event);
       actionIdSelected.value = row.id;
       actionDialogVisible.value = true;
+      actionIdPembuatSelected.value = row.id_pembuat;
       console.log(actionDialogVisible.value, actionIdSelected.value);
     }
 
@@ -476,6 +516,7 @@ export default {
       handleInfiniteScroll,
       actionDialogVisible,
       actionIdSelected,
+      dateToString,
       search,
       totalPage,
       filterOption,
@@ -483,6 +524,9 @@ export default {
       limitTableMobile,
       loadingTableMobile,
       useMq,
+      canDelete,
+      actionIdPembuatSelected,
+      permission,
       query,
     };
   },

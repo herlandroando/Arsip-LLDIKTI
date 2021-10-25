@@ -24,6 +24,7 @@ Route::get('/logout', "LoginController@logout")->name("logout")->middleware("aut
 
 Route::middleware("permission:inbox.r")->prefix("manage")->name('manage.')->group(function () {
     Route::prefix("inbox")->name('inbox.')->group(function () {
+        Route::get('/download/{id}/{name}', "ManageMail\InboxController@download")->name("download");
         Route::get('/option', "ManageMail\InboxController@filterOptions")->name("option");
 
         Route::post("/upload/temp", "ManageMail\InboxController@uploadTemp")->name("upload.temp")->middleware("permission:inbox.w");
@@ -43,6 +44,7 @@ Route::middleware("permission:inbox.r")->prefix("manage")->name('manage.')->grou
         Route::get('/{surat_masuk}', "ManageMail\InboxController@show")->name("show");
     });
     Route::middleware("permission:send.r")->prefix("send")->name('send.')->group(function () {
+        Route::get('/download/{id}/{name}', "ManageMail\SendController@download")->name("download");
         Route::get('/option', "ManageMail\SendController@filterOptions")->name("option");
         Route::get('/search/username', "ManageMail\SendController@searchUsername")->name("search.username");
         Route::post("/upload/temp", "ManageMail\SendController@uploadTemp")->name("upload.temp")->middleware("permission:send.w");
@@ -63,6 +65,8 @@ Route::middleware("permission:inbox.r")->prefix("manage")->name('manage.')->grou
         Route::get('/create', "ManageMail\DisposisiController@create")->name("create")->middleware("permission:disposisi.w");
         Route::post('/create', "ManageMail\DisposisiController@store")->name("store")->middleware("permission:disposisi.w");
         Route::get('/', "ManageMail\DisposisiController@index")->name("index");
+        Route::post('/{disposisi}/activity', "ManageMail\DisposisiController@createActivity")->name("activity.create");
+        Route::put('/{disposisi}/status', "ManageMail\DisposisiController@updateStatus")->name("status.update");
         Route::get('/{disposisi}', "ManageMail\DisposisiController@show")->name("show");
         Route::put('/{disposisi}', "ManageMail\DisposisiController@update")->name("update")->middleware("permission:disposisi.w");
         Route::delete('/{disposisi}', "ManageMail\DisposisiController@destroy")->name("destroy")->middleware("permission:disposisi.d");
@@ -88,6 +92,7 @@ Route::prefix("recycle")->name("recycle.")->middleware("permission:recycle.r")->
     });
 });
 
+Route::get('profile/{user}/{username}', "Setting\UserController@profile")->name("profile");
 
 Route::prefix("setting")->name("setting.")->group(function () {
     Route::middleware("auth")->prefix("users")->name("users.")->group(function () {
@@ -98,12 +103,13 @@ Route::prefix("setting")->name("setting.")->group(function () {
         Route::get('/', "Setting\UserController@index")->name("index")->middleware("permission:admin.r");
         Route::get('/{user}/{username}', "Setting\UserController@show")->name("show");
         Route::put('/{user}/{username}', "Setting\UserController@update")->name("update")->middleware("permission:admin.r");
+        Route::put('/{user}/{username}/password', "Setting\UserController@updatePassword")->name("update.password")->middleware("permission:admin.r");
         Route::delete('/{user}/{username}', "Setting\UserController@destroy")->name("destroy")->middleware("permission:admin.r");
     });
     Route::middleware("permission:admin.r")->group(function () {
         Route::prefix("permission")->name("permission.")->group(function () {
             Route::get('/create', "Setting\PermissionController@create")->name("create");
-            Route::post('/create', "Setting\PermissionController@create")->name("store");
+            Route::post('/create', "Setting\PermissionController@store")->name("store");
             Route::get('/', "Setting\PermissionController@index")->name("index");
             Route::get('/{permission}', "Setting\PermissionController@show")->name("show");
             Route::put('/{permission}', "Setting\PermissionController@update")->name("update");
@@ -111,7 +117,7 @@ Route::prefix("setting")->name("setting.")->group(function () {
         });
         Route::prefix("jabatan")->name("jabatan.")->group(function () {
             Route::get('/create', "Setting\JabatanController@create")->name("create");
-            Route::post('/create', "Setting\JabatanController@create")->name("store");
+            Route::post('/create', "Setting\JabatanController@store")->name("store");
             Route::get('/', "Setting\JabatanController@index")->name("index");
             Route::get('/{jabatan}', "Setting\JabatanController@show")->name("show");
             Route::put('/{jabatan}', "Setting\JabatanController@update")->name("update");

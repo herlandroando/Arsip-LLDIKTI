@@ -12,6 +12,11 @@ export default {
             message: lang.string.maximum(500, "Pesan/Keterangan"),
             trigger: "blur",
         },
+        {
+            min: 2,
+            message: lang.string.minimum(2, "Pesan/Keterangan"),
+            trigger: "blur",
+        },
     ],
 
 }

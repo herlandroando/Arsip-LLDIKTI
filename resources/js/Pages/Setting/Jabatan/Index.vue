@@ -40,11 +40,14 @@
           </div>
           <div class="jabatan-footer-bar">
             <el-button-group
-              ><el-button @click="handleAddList" type="primary"
+              ><el-button
+                :disabled="unableChange"
+                @click="handleAddList"
+                type="primary"
                 ><b>+</b></el-button
               ><el-button
                 @click="isDialogWarnOpened = true"
-                :disabled="!isSelectedAvailable"
+                :disabled="!isSelectedAvailable || unableChange"
                 type="danger"
                 ><b>-</b></el-button
               ></el-button-group
@@ -74,7 +77,10 @@
               <el-row class="form-container">
                 <el-col v-if="isAdd" :span="24" prop="nama">
                   <el-form-item label="Nama Ijin">
-                    <el-input v-model="formData.nama" :readonly="unableChange"></el-input>
+                    <el-input
+                      v-model="formData.nama"
+                      :readonly="unableChange"
+                    ></el-input>
                   </el-form-item>
                 </el-col>
                 <el-col :span="24" prop="ijin">
@@ -95,7 +101,7 @@
                   </el-form-item>
                 </el-col>
                 <el-col :span="24">
-                 <el-button
+                  <el-button
                     v-if="!unableChange"
                     @click="handleSubmit"
                     :disabled="!isEdit && !isAdd"
@@ -148,12 +154,19 @@
         <el-row class="form-container">
           <el-col v-if="isAdd" :span="24" prop="nama">
             <el-form-item label="Nama Ijin">
-              <el-input v-model="formData.nama" :readonly="unableChange"></el-input>
+              <el-input
+                v-model="formData.nama"
+                :readonly="unableChange"
+              ></el-input>
             </el-form-item>
           </el-col>
           <el-col :span="24" prop="ijin">
             <el-form-item label="Ijin yang Digunakan">
-              <el-select :disabled="unableChange" v-model="formData.ijin" placeholder="Pilih salah satu">
+              <el-select
+                :disabled="unableChange"
+                v-model="formData.ijin"
+                placeholder="Pilih salah satu"
+              >
                 <el-option
                   v-for="item in permissionList"
                   :key="item.id"
@@ -169,8 +182,9 @@
 
       <template #footer>
         <el-button
+          v-if="!unableChange"
           @click="handleSubmit"
-          :disabled="!isEdit && !isAdd && !unableChange"
+          :disabled="!isEdit && !isAdd || unableChange"
           type="primary"
         >
           Simpan
@@ -211,7 +225,7 @@ import { Inertia } from "@inertiajs/inertia";
 import { defaultProps, initializationView } from "@shared/InertiaConfig.js";
 import Layout from "@shared/Layout.vue";
 import { computed, reactive, ref } from "@vue/reactivity";
-import { onMounted, watch } from "@vue/runtime-core";
+import { onMounted, onUpdated, watch } from "@vue/runtime-core";
 import _ from "lodash";
 import { Failed, List } from "@element-plus/icons";
 import { useMq } from "vue3-mq";
@@ -220,12 +234,17 @@ export default {
   props: {
     ...defaultProps,
     list: { type: Array, default: () => [] },
-    selectedContent: { type: Object, default: () => {return {}} },
-    permissionList: {type:Array, default:()=>[]},
+    selectedContent: {
+      type: Object,
+      default: () => {
+        return {};
+      },
+    },
+    permissionList: { type: Array, default: () => [] },
     isAvailable: { type: Boolean, default: false },
     isSelectedAvailable: { type: Boolean, default: false },
     isAdd: { type: Boolean, default: false },
-    unableChange: {type: Boolean, default:false},
+    unableChange: { type: Boolean, default: false },
   },
   components: { Layout, List, Failed },
   setup(props) {
@@ -235,7 +254,7 @@ export default {
     const isEdit = ref(false);
     const form = ref(null);
     const formData = reactive({
-      ijin:""
+      ijin: "",
     });
     const isDialogWarnOpened = ref(false);
     const isDialogFormOpened = computed(
@@ -247,10 +266,12 @@ export default {
         let data = props.selectedContent;
         formData.ijin = data.id_ijin;
       }
-
     }
 
     onMounted(() => {
+      initData();
+    });
+    onUpdated(() => {
       initData();
     });
 
@@ -260,8 +281,7 @@ export default {
         if (props.isSelectedAvailable) {
           let data = props.selectedContent;
 
-
-          isEdit.value =  newVal.ijin !== data.id_ijin;
+          isEdit.value = newVal.ijin !== data.id_ijin;
         }
       }
     );
@@ -283,7 +303,7 @@ export default {
     }
 
     function handleRemoveList() {
-      Inertia.get(
+      Inertia.delete(
         route("setting.jabatan.destroy", {
           jabatan: props.selectedContent.id,
         })
@@ -298,12 +318,14 @@ export default {
       let data = { ...formData };
       if (isEdit) {
         Inertia.put(
-          route("setting.jabatan.update", { jabatan: id }),
+          route("setting.jabatan.update", {
+            jabatan: props.selectedContent.id,
+          }),
           data,
           { preserveScroll: true }
         );
       } else if (isAdd) {
-        Inertia.put(route("setting.jabatan.store"), data, {
+        Inertia.post(route("setting.jabatan.store"), data, {
           preserveScroll: true,
         });
       }

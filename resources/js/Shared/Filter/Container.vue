@@ -1,7 +1,11 @@
 <template>
   <el-scrollbar>
     <div class="flex-content">
-      <el-button size="small" @click="dialogTriggered">
+      <el-button
+        style="background-color:#5451CF; color:white"
+        size="small"
+        @click="dialogTriggered"
+      >
         + Tambah Filter
       </el-button>
       <template v-if="!isQueryEmpty">
@@ -32,7 +36,11 @@
           >
             <el-option label="Tidak ada pilihan" value="empty"></el-option>
             <template :key="item.query" v-for="item in options">
-              <el-option v-if="definePermitted(item)" :label="item.label" :value="item.query">
+              <el-option
+                v-if="definePermitted(item)"
+                :label="item.label"
+                :value="item.query"
+              >
               </el-option>
             </template>
           </el-select>
@@ -236,7 +244,8 @@ export default {
       useMq,
       dialogSubmitted,
       dialogTriggered,
-      definedLabelValue,definePermitted,
+      definedLabelValue,
+      definePermitted,
     };
   },
 };

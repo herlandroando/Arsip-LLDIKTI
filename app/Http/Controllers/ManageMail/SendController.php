@@ -26,7 +26,7 @@ class SendController extends Controller
     protected array $filter_list_option = [
         "sifat" => ["table" => "sifatsurat", "only" => ["nama", "id"]],
         "pembuat" => ["table" => "suratkeluar", "column" => 'nama_pembuat', "distinct" => true],
-        "asal_surat" => ["table" => "suratkeluar","distinct"=>true, "column" => 'nama', "relation" => "jabatan.asal_surat", "only" => ["jabatan.nama", "jabatan.id"]],
+        "asal_surat" => ["table" => "suratkeluar", "distinct" => true, "column" => 'nama', "relation" => "jabatan.asal_surat", "only" => ["jabatan.nama", "jabatan.id"]],
     ];
 
     protected array $table_option = [
@@ -92,6 +92,7 @@ class SendController extends Controller
             $data = $surat_keluar->map(function ($item, $key) {
                 return [
                     "id"            => $item->id,
+                    "id_pembuat"    => $item->id_pembuat ?? 0,
                     "no_surat"      => $item->no_surat,
                     "sifat"         => $item->sifatSurat->nama,
                     "asal_surat"    => $item->jabatan->nama,
@@ -136,6 +137,7 @@ class SendController extends Controller
         $data = $surat_keluar->map(function ($item, $key) {
             return [
                 "id"            => $item->id,
+                "id_pembuat"    => $item->id_pembuat ?? 0,
                 "no_surat"      => $item->no_surat,
                 "sifat"         => $item->sifatSurat->nama,
                 "asal_surat"    => $item->jabatan->nama,
@@ -155,7 +157,7 @@ class SendController extends Controller
      */
     public function create(Request $request)
     {
-        $this->setTitle("Buat Surat Masuk");
+        $this->setTitle("Buat Surat Keluar");
 
         if ($request->session()->has("temp_file"))
             $this->setData("tempFileSurat", session("temp_file"));
@@ -170,6 +172,13 @@ class SendController extends Controller
      */
     public function store(Request $request)
     {
+        $valid_user = $request->user()->jabatan->ijin->w_suratkeluar;
+        $valid_admin = $request->user()->jabatan->ijin->w_suratkeluar && $request->user()->jabatan->ijin->admin;
+        if (!$valid_user && !$valid_admin) {
+            $toast = Toast::error("Gagal", "Anda tidak diperbolehkan melakukan tindakan ini.");
+            return $this->redirectInertia(route("manage.send.show"), $toast);
+        }
+
         $input = $request->input();
         $validator = Validator::make($input, [
             "perihal"       => "required|string|max:254",
@@ -203,15 +212,15 @@ class SendController extends Controller
             foreach ($temp_file as $file) {
                 $part_name_file                     = explode(".", $file["id"]);
                 $extension                          = end($part_name_file) ?? "unknown";
-                $path_file                          = "images/temp/{$file['id']}";
-                $target_path                        = "images/dokumen_sk/{$surat_keluar->id}/";
+                $path_file                          = "temp/{$file['id']}";
+                $target_path                        = "dokumen_sk/{$surat_keluar->id}/";
                 $file_name                          = Str::random(18) . "." . $extension;
 
                 $file_surat_keluar                   = new DokumenSuratKeluar();
                 $file_surat_keluar->ukuran           = Storage::size($path_file);
                 $file_surat_keluar->alias            = $file_name;
                 $file_surat_keluar->tipe             = $extension;
-                $file_surat_keluar->id_suratkeluar    = $surat_keluar->id;
+                $file_surat_keluar->id_suratkeluar   = $surat_keluar->id;
                 $file_surat_keluar->nama             = $file["name"] ?? "FileTidakBernama.{$extension}";
                 $file_surat_keluar->save();
                 Storage::move($path_file, $target_path . $file_name);
@@ -223,7 +232,8 @@ class SendController extends Controller
 
         session(["temp_file" => null]);
 
-        return $this->redirectInertia(route("manage.send.create"), $toast);
+        return $this->redirectInertia(route("manage.send.show", ["surat_keluar" => $surat_keluar->id]), $toast);
+
         // perihal: "",
         // tanggal_surat: "",
         // no_surat: "",
@@ -252,6 +262,7 @@ class SendController extends Controller
         }
         $data = [
             "id" => $surat_keluar->id,
+            "id_pembuat" => $surat_keluar->id_pembuat,
             "perihal" => $surat_keluar->perihal,
             "tanggal_surat" => $surat_keluar->tanggal_surat,
             "no_surat" => $surat_keluar->no_surat,
@@ -267,7 +278,7 @@ class SendController extends Controller
                         "nama" => $item->nama,
                         "ukuran" => $item->ukuran,
                         "tipe" => $item->tipe,
-                        "url" => public_path("")
+                        "url" => route("manage.send.download", ["id" => $item->id, "name" => $item->alias])
                     ];
                 }
             ),
@@ -310,6 +321,12 @@ class SendController extends Controller
      */
     public function update(Request $request, SuratKeluar $surat_keluar)
     {
+        $valid_user_created = $request->user()->jabatan->ijin->w_suratkeluar && $request->user()->id == $surat_keluar->id_pembuat;
+        $valid_admin = $request->user()->jabatan->ijin->admin;
+        if (!$valid_user_created && !$valid_admin) {
+            $toast = Toast::error("Gagal", "Anda tidak diperbolehkan melakukan tindakan ini.");
+            return $this->redirectInertia(route("manage.send.show", ["surat_keluar" => $surat_keluar->id]), $toast);
+        }
         $input = $request->input();
         $validator = Validator::make($input, [
             "perihal"       => "required|string|max:254",
@@ -353,9 +370,14 @@ class SendController extends Controller
      */
     public function destroy(SuratKeluar $surat_keluar)
     {
+        $valid_user_deleted = request()->user()->jabatan->ijin->d_surat || (request()->user()->jabatan->ijin->d_miliksurat && request()->user()->id == $surat_keluar->id_pembuat);
+        if (!$valid_user_deleted) {
+            $toast = Toast::error("Gagal", "Anda tidak diperbolehkan melakukan tindakan ini.");
+            return $this->redirectInertia(route("manage.send.index"), $toast);
+        }
         // dd($surat_keluar, "test");
         $surat_keluar->delete();
-        $toast = Toast::success("Hapus Surat Masuk", "Penghapusan surat masuk berhasil!");
+        $toast = Toast::success("Hapus Surat Keluar", "Penghapusan surat keluar berhasil!");
         return $this->redirectInertia(route("manage.send.index"), $toast);
     }
 
@@ -364,7 +386,7 @@ class SendController extends Controller
         $session_temp_file = session("temp_file");
         $id = $request->input("id");
         if (empty($session_temp_file) || empty($id)) {
-            return response("failed", Response::HTTP_BAD_REQUEST);
+            return response("failed.not_found", Response::HTTP_BAD_REQUEST);
         }
         $test = "";
         $filtered = array_filter($session_temp_file, function ($value) use ($id, &$test) {
@@ -386,16 +408,28 @@ class SendController extends Controller
         if (empty($file)) {
             return response()->json(["success" => false, "message" => "File is null."], Response::HTTP_BAD_REQUEST);
         }
+        $valid_user_created = $request->user()->jabatan->ijin->w_suratkeluar && $request->user()->id == $surat_keluar->id_pembuat;
+        $valid_admin = $request->user()->jabatan->ijin->w_suratkeluar && $request->user()->jabatan->ijin->admin;
+        if (!$valid_user_created && !$valid_admin) {
+            return response("failed.validation_user", Response::HTTP_BAD_REQUEST);
+        }
+        $validator = Validator::make(["files" => $file], [
+            "files" => "required|file|max:4096|mimes:png,jpg,jpeg,gif,bmp,pdf"
+        ]);
+        if ($validator->fails()) {
+            return response("failed.validation", Response::HTTP_BAD_REQUEST);
+        }
+
         $id_surat                           = $surat_keluar->id;
         $extension                          = $file->getClientOriginalExtension();
         $file_name                          = Str::random(18) . "." . $extension;
-        $file->storeAs("images/dokumen_sk/$id_surat", $file_name);
+        $file->storeAs("dokumen_sk/$id_surat", $file_name);
 
         $file_surat_keluar                   = new DokumenSuratKeluar;
         $file_surat_keluar->ukuran           = $file->getSize();
         $file_surat_keluar->alias            = $file_name;
         $file_surat_keluar->tipe             = $extension;
-        $file_surat_keluar->id_suratmasuk    = $surat_keluar->id;
+        $file_surat_keluar->id_suratkeluar    = $surat_keluar->id;
         $file_surat_keluar->nama             = $file->getClientOriginalName() ?? "FileTidakBernama.{$extension}";
         $file_surat_keluar->save();
 
@@ -408,22 +442,27 @@ class SendController extends Controller
                 "nama" => $file_surat_keluar->nama,
                 "ukuran" => $file_surat_keluar->ukuran,
                 "tipe" => $file_surat_keluar->tipe,
-                "url" => public_path("")
+                "url" => route("manage.send.download", ["id" => $file_surat_keluar->id, "name" => $file_surat_keluar->alias])
             ]
         ]);
     }
 
     public function deleteFile(Request $request, SuratKeluar $surat_keluar)
     {
-        $id_surat = $surat_keluar->id;
-        $path = "images/dokumen_sk/$id_surat/";
-        $id_file = $request->input("id");
-        if (empty($id_file)) {
+        $valid_user_created = $request->user()->jabatan->ijin->w_suratkeluar && $request->user()->id == $surat_keluar->id_pembuat;
+        $valid_admin = $request->user()->jabatan->ijin->w_suratkeluar && $request->user()->jabatan->ijin->admin;
+        if (!$valid_user_created && !$valid_admin) {
             return response("failed", Response::HTTP_BAD_REQUEST);
         }
-        $dokumen = DokumenSuratKeluar::where("id_suratmasuk", $id_surat)->where("id", $id_file)->first();
+        $id_surat = $surat_keluar->id;
+        $path = "dokumen_sk/$id_surat/";
+        $id_file = $request->input("id");
+        if (empty($id_file)) {
+            return response("failed.not_found", Response::HTTP_BAD_REQUEST);
+        }
+        $dokumen = DokumenSuratKeluar::where("id_suratkeluar", $id_surat)->where("id", $id_file)->first();
         if (empty($dokumen))
-            return response("failed", Response::HTTP_BAD_REQUEST);
+            return response("failed.not_found_dokumen", Response::HTTP_BAD_REQUEST);
         $file_name = $dokumen->alias;
         $full_path = $path . $file_name;
         if (Storage::exists($full_path))
@@ -439,11 +478,22 @@ class SendController extends Controller
      */
     public function uploadTemp(Request $request)
     {
+        $valid_user = $request->user()->jabatan->ijin->w_suratkeluar;
+        $valid_admin = $request->user()->jabatan->ijin->w_suratkeluar && $request->user()->jabatan->ijin->admin;
+        if (!$valid_user && !$valid_admin) {
+            return response("failed", Response::HTTP_BAD_REQUEST);
+        }
         $file = $request->file("file");
+        $validator = Validator::make(["files" => $file], [
+            "files" => "required|file|max:4096|mimes:png,jpg,jpeg,gif,bmp,pdf"
+        ]);
+        if ($validator->fails()) {
+            return response("failed.validation", Response::HTTP_BAD_REQUEST);
+        }
         $date = now()->startOfDay()->timestamp;
         $file_name = Str::random(4) . (string)$date . ".{$file->extension()}";
         $store_session_name =  "$date/$file_name";
-        $file->storeAs("images/temp/$date", $file_name);
+        $file->storeAs("temp/$date", $file_name);
         $temp_file = session("temp_file") ?? [];
         array_push($temp_file, ["name" => $file->getClientOriginalName(), "id" => $store_session_name]);
         session(["temp_file" => $temp_file]);
@@ -462,5 +512,30 @@ class SendController extends Controller
             return ["value" => "$item->nama ($item->username)", "real_value" => $item->username];
         });
         return response()->json(["result" => $result]);
+    }
+
+    public function download(Request $request, $id, $name)
+    {
+        // gambar: ["png", "jpg", "jpeg", "gif", "bmp"],
+        // pdf
+        if (!$request->user()->jabatan->ijin->r_surat && !$request->user()->jabatan->ijin->admin) {
+            return $this->throwOrRedirect("Not Permitted to download.", 404);
+        }
+        $open = $request->query("open", 0);
+
+        $dokumen = DB::table('dokumen_sk')->where("id", $id)->where("alias", $name)->first();
+        if (empty($dokumen)) {
+            return $this->throwOrRedirect("File is not found.", 404);
+        }
+        // dd($laporan,Storage::exists("reports/$laporan->path"));
+        if (Storage::exists("dokumen_sk/$dokumen->id_suratkeluar/$dokumen->alias")) {
+            if (in_array($dokumen->tipe, ["pdf", "jpg", "png", "jpeg", "gif", "bmp"]) && $open == 1)
+                return response()->file(storage_path("app/dokumen_sk/$dokumen->id_suratkeluar/$dokumen->alias"));
+            else {
+                return response()->download(storage_path("app/dokumen_sk/$dokumen->id_suratkeluar/$dokumen->alias", $dokumen->alias));
+            }
+        } else {
+            return $this->redirectInertia(route("errors.index", ["code" => 404]));
+        }
     }
 }

@@ -73,13 +73,11 @@ const props = defineProps({
 });
 
 const emits = defineEmits(["update:modelValue"]);
+const mq = useMq();
 
 onMounted(() => {
   if (stateBetweenActive.value)
-    emits("update:modelValue", [
-      new Date(),
-      new Date(),
-    ]);
+    emits("update:modelValue", [new Date(), new Date()]);
   else emits("update:modelValue", new Date());
 });
 
@@ -93,11 +91,24 @@ const stateBetweenComputed = computed({
   },
 });
 
+
 const modelValueComputed = computed({
   get: () => {
     return props.modelValue;
   },
   set: (value) => {
+    if (!stateBetweenActive.value) {
+      let difference = value.getTimezoneOffset();
+      let minute = value.getMinutes();
+      value.setMinutes(minute - difference);
+    } else {
+      let difference1 = value[0].getTimezoneOffset();
+      let minute1 = value[0].getMinutes();
+      let difference2 = value[1].getTimezoneOffset();
+      let minute2 = value[1].getMinutes();
+      value[0].setMinutes(minute1 - difference1);
+      value[1].setMinutes(minute2 - difference2);
+    }
     emits("update:modelValue", value);
   },
 });
@@ -111,6 +122,9 @@ const startDateMobile = computed({
     }
   },
   set: (value) => {
+    let difference = value.getTimezoneOffset();
+    let minute = value.getMinutes();
+    value.setMinutes(minute - difference);
     if (+value <= +props.modelValue[1]) {
       emits("update:modelValue", [value, props.modelValue[1]]);
     }
@@ -125,13 +139,13 @@ const endDateMobile = computed({
     }
   },
   set: (value) => {
+    let difference = value.getTimezoneOffset();
+    let minute = value.getMinutes();
+    value.setMinutes(minute - difference);
     if (+value >= +props.modelValue[0]) {
       emits("update:modelValue", [props.modelValue[0], value]);
     } else {
-      emits("update:modelValue", [
-        value,
-        value
-      ]);
+      emits("update:modelValue", [value, value]);
     }
   },
 });

@@ -25,6 +25,7 @@ class Ijin extends Migration
             $table->boolean('w_disposisi');
             $table->boolean('w_suratmasuk');
             $table->boolean('w_suratkeluar');
+            $table->boolean('w_all_surat');
             $table->boolean('admin');
         });
     }

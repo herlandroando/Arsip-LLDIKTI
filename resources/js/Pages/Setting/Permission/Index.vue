@@ -40,11 +40,11 @@
           </div>
           <div class="permission-footer-bar">
             <el-button-group
-              ><el-button @click="handleAddList" type="primary"
+              ><el-button :disabled="unableChange" @click="handleAddList" type="primary"
                 ><b>+</b></el-button
               ><el-button
                 @click="isDialogWarnOpened = true"
-                :disabled="!isSelectedAvailable"
+                :disabled="!isSelectedAvailable || unableChange"
                 type="danger"
                 ><b>-</b></el-button
               ></el-button-group
@@ -94,7 +94,7 @@
                   <el-form-item prop="w_suratmasuk">
                     <el-checkbox
                       v-model="formData.w_suratmasuk"
-                      label="Membuat Surat Masuk"
+                      label="Membuat/Mengubah Surat Masuk"
                       :disabled="unableChange"
                     ></el-checkbox>
                   </el-form-item>
@@ -103,7 +103,16 @@
                   <el-form-item prop="w_suratkeluar">
                     <el-checkbox
                       v-model="formData.w_suratkeluar"
-                      label="Membuat Surat Keluar"
+                      label="Membuat/Mengubah Surat Keluar"
+                      :disabled="unableChange"
+                    ></el-checkbox>
+                  </el-form-item>
+                </el-col>
+                <el-col v-if="formData.r_surat" :span="24">
+                  <el-form-item prop="w_all_surat">
+                    <el-checkbox
+                      v-model="formData.w_all_surat"
+                      label="Membuat/Mengubah Semua Surat"
                       :disabled="unableChange"
                     ></el-checkbox>
                   </el-form-item>
@@ -228,15 +237,11 @@
               <el-input v-model="formData.nama"></el-input>
             </el-form-item>
           </el-col>
-          <el-col v-if="isAdd" :span="24" prop="nama">
-            <el-form-item label="Nama Ijin">
-              <el-input v-model="formData.nama"></el-input>
-            </el-form-item>
-          </el-col>
           <el-col :span="24">
             <el-form-item prop="r_surat">
               <el-checkbox
                 v-model="formData.r_surat"
+                :disabled="unableChange"
                 label="Melihat Surat dan Disposisi"
               ></el-checkbox>
             </el-form-item>
@@ -246,7 +251,8 @@
             <el-form-item prop="w_suratmasuk">
               <el-checkbox
                 v-model="formData.w_suratmasuk"
-                label="Membuat Surat Masuk"
+                label="Membuat/Mengubah Surat Masuk"
+                :disabled="unableChange"
               ></el-checkbox>
             </el-form-item>
           </el-col>
@@ -254,7 +260,17 @@
             <el-form-item prop="w_suratkeluar">
               <el-checkbox
                 v-model="formData.w_suratkeluar"
-                label="Membuat Surat Keluar"
+                label="Membuat/Mengubah Surat Keluar"
+                :disabled="unableChange"
+              ></el-checkbox>
+            </el-form-item>
+          </el-col>
+          <el-col v-if="formData.r_surat" :span="24">
+            <el-form-item prop="w_all_surat">
+              <el-checkbox
+                v-model="formData.w_all_surat"
+                label="Membuat/Mengubah Semua Surat"
+                :disabled="unableChange"
               ></el-checkbox>
             </el-form-item>
           </el-col>
@@ -262,6 +278,7 @@
             <el-form-item prop="d_surat">
               <el-checkbox
                 v-model="formData.d_surat"
+                :disabled="unableChange"
                 label="Hapus Surat"
               ></el-checkbox>
             </el-form-item>
@@ -269,6 +286,7 @@
           <el-col v-if="formData.r_surat" :span="24">
             <el-form-item prop="d_miliksurat">
               <el-checkbox
+                :disabled="unableChange"
                 v-model="formData.d_miliksurat"
                 label="Hapus Surat Milik Sendiri"
               ></el-checkbox>
@@ -277,6 +295,7 @@
           <el-col v-if="formData.r_surat" :span="24">
             <el-form-item prop="dp_surat">
               <el-checkbox
+                :disabled="unableChange"
                 v-model="formData.dp_surat"
                 label="Hapus Surat secara Permanen"
               ></el-checkbox>
@@ -285,6 +304,7 @@
           <el-col v-if="formData.r_surat" :span="24">
             <el-form-item prop="r_all_disposisi">
               <el-checkbox
+                :disabled="unableChange"
                 v-model="formData.r_all_disposisi"
                 label="Melihat Disposisi dari Semua Jabatan"
               ></el-checkbox>
@@ -294,6 +314,7 @@
             <el-form-item prop="w_disposisi">
               <el-checkbox
                 v-model="formData.w_disposisi"
+                :disabled="unableChange"
                 label="Mengelola Disposisi"
               ></el-checkbox>
             </el-form-item>
@@ -302,6 +323,7 @@
             <el-form-item prop="r_laporan">
               <el-checkbox
                 v-model="formData.r_laporan"
+                :disabled="unableChange"
                 label="Melihat Laporan"
               ></el-checkbox>
             </el-form-item>
@@ -310,6 +332,7 @@
             <el-form-item prop="admin">
               <el-checkbox
                 v-model="formData.admin"
+                :disabled="unableChange || !permission.super_admin"
                 label="Administrator"
               ></el-checkbox>
             </el-form-item>
@@ -359,10 +382,14 @@
 
 <script >
 import { Inertia } from "@inertiajs/inertia";
-import { defaultProps, initializationView } from "@shared/InertiaConfig.js";
+import {
+  defaultProps,
+  initializationView,
+  getPermission,
+} from "@shared/InertiaConfig.js";
 import Layout from "@shared/Layout.vue";
 import { computed, reactive, ref } from "@vue/reactivity";
-import { onMounted, watch } from "@vue/runtime-core";
+import { onMounted, onUpdated, watch } from "@vue/runtime-core";
 import _ from "lodash";
 import { Failed, List } from "@element-plus/icons";
 import { useMq } from "vue3-mq";
@@ -394,12 +421,14 @@ export default {
       w_disposisi: false,
       w_suratmasuk: false,
       w_suratkeluar: false,
+      w_all_surat: false,
       admin: false,
     });
     const isDialogWarnOpened = ref(false);
     const isDialogFormOpened = computed(
       () => props.isAdd || props.isSelectedAvailable
     );
+    const permission = getPermission(props);
 
     function initData() {
       if (props.isSelectedAvailable) {
@@ -412,6 +441,7 @@ export default {
         formData.dp_surat = data.dp_surat;
         formData.w_disposisi = data.w_disposisi;
         formData.w_suratmasuk = data.w_suratmasuk;
+        formData.w_all_surat = data.w_all_surat;
         formData.w_suratkeluar = data.w_suratkeluar;
         formData.admin = data.admin;
       }
@@ -430,6 +460,7 @@ export default {
       formData.dp_surat = false;
       formData.w_disposisi = false;
       formData.w_suratmasuk = false;
+      formData.w_all_surat = false;
       formData.w_suratkeluar = false;
       formData.admin = false;
     }
@@ -437,6 +468,10 @@ export default {
     onMounted(() => {
       initData();
     });
+
+    onUpdated(()=>{
+      initData();
+    })
 
     watch(
       () => _.cloneDeep(formData),
@@ -472,7 +507,7 @@ export default {
     }
 
     function handleRemoveList() {
-      Inertia.get(
+      Inertia.delete(
         route("setting.permission.destroy", {
           permission: props.selectedContent.id,
         })
@@ -485,14 +520,14 @@ export default {
 
     function handleSubmit() {
       let data = { ...formData };
-      if (isEdit) {
+      if (isEdit.value) {
         Inertia.put(
           route("setting.permission.update", { permission: id }),
           data,
           { preserveScroll: true }
         );
-      } else if (isAdd) {
-        Inertia.put(route("setting.permission.store"), data, {
+      } else if (props.isAdd) {
+        Inertia.post(route("setting.permission.store"), data, {
           preserveScroll: true,
         });
       }
@@ -512,6 +547,7 @@ export default {
       handleAddList,
       handleRemoveList,
       handleSubmit,
+      permission,
     };
   },
 };

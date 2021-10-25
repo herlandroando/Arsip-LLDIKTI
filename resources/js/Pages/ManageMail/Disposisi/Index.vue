@@ -7,6 +7,15 @@
     <!-- For MOBILE - START -->
     <!-- <el-space v-if="useMq().current === 'xs'" wrap :size="16"> -->
     <template v-if="useMq().current === 'xs'">
+      <el-row class="text-center" style="margin-bottom: 20px">
+        <el-button
+          v-if="permission.w_disposisi"
+          @click="handleAddDisposisi"
+          icon="el-icon-circle-plus-outline"
+          type="primary"
+          >Tambah Disposisi</el-button
+        >
+      </el-row>
       <el-row>
         <filter-container
           :options="filterOption"
@@ -26,8 +35,8 @@
           <el-table-column type="expand">
             <template #default="scope">
               <p><b>Status:</b> {{ scope.row.status }}</p>
-              <p><b>Tenggat Waktu:</b> {{ scope.row.tenggat_waktu }}</p>
-              <p><b>Terakhir Diubah</b>: {{ scope.row.tanggal_ubah }}</p>
+              <p><b>Tenggat Waktu:</b> {{ dateToString(scope.row.tenggat_waktu) }}</p>
+              <p><b>Terakhir Diubah</b>: {{ dateToString(scope.row.tanggal_ubah) }}</p>
               <p><b>Asal:</b> {{ scope.row.asal }}</p>
               <p><b>Tujuan:</b> {{ scope.row.tujuan }}</p>
             </template>
@@ -76,7 +85,7 @@
               <el-col :span="18">
                 <el-form-item>
                   <el-input
-                    placeholder="Cari Surat Masuk"
+                    placeholder="Cari Disposisi Masuk"
                     prefix-icon="el-icon-search"
                     v-model="search"
                   >
@@ -91,6 +100,7 @@
         </el-col>
         <el-col :offset="1" :span="5" class="text-center">
           <el-button
+            v-if="permission.w_disposisi"
             @click="handleAddDisposisi"
             icon="el-icon-circle-plus-outline"
             type="primary"
@@ -124,13 +134,10 @@
               >
                 <template #default="scope">
                   {{
-                    new Date(scope.row.tenggat_waktu).toLocaleString(
-                      "id-ID",
-                      {
-                        dateStyle: "full",
-                        timeStyle: "short",
-                      }
-                    )
+                    new Date(scope.row.tenggat_waktu).toLocaleString("id-ID", {
+                      dateStyle: "full",
+                      timeStyle: "short",
+                    })
                   }}
                 </template>
               </el-table-column>
@@ -171,7 +178,10 @@
               ></el-table-column>
               <el-table-column
                 sortable="custom"
-               prop="tujuan" label="Tujuan" width="160">
+                prop="tujuan"
+                label="Tujuan"
+                width="160"
+              >
               </el-table-column>
               <el-table-column label="Isi ringkas" prop="isi" width="250">
                 <template #default="scope">
@@ -185,16 +195,18 @@
                     @click="handleDetailTable(scope.row.id)"
                     >Detail</el-button
                   >
-                  <el-popconfirm
-                    title="Apakah anda yakin menghapus disposisi ini?"
-                    confirmButtonText="Iya"
-                    cancelButtonText="Tidak"
-                    @confirm="handleDeleteDisposisi(scope.row.id)"
-                  >
-                    <template #reference>
-                      <el-button size="mini" type="danger">Hapus</el-button>
-                    </template>
-                  </el-popconfirm>
+                  <template v-if="canDelete()">
+                    <el-popconfirm
+                      title="Apakah anda yakin menghapus disposisi ini?"
+                      confirmButtonText="Iya"
+                      cancelButtonText="Tidak"
+                      @confirm="handleDeleteDisposisi(scope.row.id)"
+                    >
+                      <template #reference>
+                        <el-button size="mini" type="danger">Hapus</el-button>
+                      </template>
+                    </el-popconfirm>
+                  </template>
                 </template>
               </el-table-column>
             </el-table>
@@ -248,16 +260,18 @@
           type="primary"
           >Lihat Detail</el-button
         >
-        <el-popconfirm
-          title="Apakah anda yakin menghapus disposisi ini?"
-          confirmButtonText="Iya"
-          cancelButtonText="Tidak"
-          @confirm="handleDeleteDisposisi()"
-        >
-          <template #reference>
-            <el-button style="width: 100%" type="danger">Hapus</el-button>
-          </template>
-        </el-popconfirm>
+        <template v-if="canDelete()">
+          <el-popconfirm
+            title="Apakah anda yakin menghapus disposisi ini?"
+            confirmButtonText="Iya"
+            cancelButtonText="Tidak"
+            @confirm="handleDeleteDisposisi()"
+          >
+            <template #reference>
+              <el-button style="width: 100%" type="danger">Hapus</el-button>
+            </template>
+          </el-popconfirm>
+        </template>
         <el-button style="width: 100%" @click="actionDialogVisible = false"
           >Tutup</el-button
         >
@@ -269,11 +283,15 @@
 
 <script>
 import { Inertia } from "@inertiajs/inertia";
-import { defaultProps, initializationView } from "@shared/InertiaConfig.js";
+import {
+  defaultProps,
+  initializationView,
+  getPermission,
+} from "@shared/InertiaConfig.js";
 
 import { Failed, DeleteFilled, List } from "@element-plus/icons";
 
-import { truncateString } from "@shared/HelperFunction";
+import { truncateString, dateToString } from "@shared/HelperFunction";
 import Layout from "@shared/Layout";
 import { reactive, ref } from "@vue/reactivity";
 import { computed, inject } from "@vue/runtime-core";
@@ -324,10 +342,31 @@ export default {
       sort: "",
       filterQuery: props.q_filter,
     });
+    const permission = getPermission(props);
+    const canDelete = (row = false) => {
+      if (permission.d_surat) {
+        return true;
+      }
+
+      if (row === false) {
+        if (
+          permission.d_miliksurat &&
+          actionIdPembuatSelected.value == props._user.id
+        ) {
+          return true;
+        }
+      } else {
+        if (permission.d_miliksurat && row.id_pengirim == props._user.id) {
+          return true;
+        }
+      }
+      return false;
+    };
     //=== Mobile =====
     const tableDataMobile = ref(props.tableData);
     const actionDialogVisible = ref(false);
     const actionIdSelected = ref();
+    const actionIdPembuatSelected = ref();
     const loadingTableMobile = ref(false);
     const limitTableMobile = ref(false);
     const mq = useMq();
@@ -438,6 +477,7 @@ export default {
       //   console.log(row, column, event);
       actionIdSelected.value = row.id;
       actionDialogVisible.value = true;
+      actionIdPembuatSelected.value = row.id_pengirim;
       console.log(actionDialogVisible.value, actionIdSelected.value);
     }
 
@@ -501,6 +541,9 @@ export default {
       limitTableMobile,
       loadingTableMobile,
       useMq,
+      canDelete,
+      actionIdPembuatSelected,
+      permission,
       query,
     };
   },

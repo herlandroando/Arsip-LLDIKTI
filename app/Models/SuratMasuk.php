@@ -38,6 +38,17 @@ class SuratMasuk extends Model
             $this->attributes['tanggal_surat'] = $value;
     }
 
+    public function scopeNewMail($query,$limit=10){
+        $start = Carbon::now()->timezone("Asia/Jayapura")->startOfDay();
+        $end = Carbon::now()->timezone("Asia/Jayapura")->endOfDay();
+        $query=$query->orderBy("created_at","desc")->whereBetween("created_at",[$start,$end]);
+        if ($limit > 0) {
+            return $query->limit($limit);
+        } else {
+            return $query;
+        }
+    }
+
 
     public function scopeConfigTable($query, $request)
     {

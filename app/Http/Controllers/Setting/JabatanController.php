@@ -30,8 +30,11 @@ class JabatanController extends Controller
             $this->setData("isAvailable", false);
         }
         if ($with_permission) {
-            $permission = Ijin::all(["id", "nama"]);
-
+            if (request()->user()->id == 1)
+                $permission = Ijin::all(["id", "nama"]);
+            else {
+                $permission = Ijin::where("admin", "!=", 1)->get();
+            }
             $this->setData("permissionList", $permission->isNotEmpty() ? $permission : []);
         }
     }
@@ -39,13 +42,14 @@ class JabatanController extends Controller
     {
         $this->queryAll();
         // dd($user);
+        $this->setData("unableChange", request()->user()->id != 1);
         return $this->runInertia("Setting/Jabatan/Index");
     }
 
     public function destroy(Jabatan $jabatan)
     {
         // dd($surat_masuk, "test");
-        if ($jabatan->id == 1) {
+        if (request()->user()->id != 1) {
             $toast = Toast::success("Hapus Gagal", "Penghapusan jabatan ini tidak diperbolehkan!");
             return $this->redirectInertia(route("setting.jabatan.index"), $toast);
         }
@@ -60,7 +64,7 @@ class JabatanController extends Controller
 
         $this->setData("isSelectedAvailable", true);
         $this->setData("selectedContent", $jabatan);
-        $this->setData("unableChange",$jabatan->id == 1);
+        $this->setData("unableChange", request()->user()->id != 1);
 
         return $this->runInertia("Setting/Jabatan/Index");
     }
@@ -76,6 +80,10 @@ class JabatanController extends Controller
 
     public function store(Request $request)
     {
+        if (request()->user()->id != 1) {
+            $toast = Toast::success("Gagal", "Penambahan jabatan ini tidak diperbolehkan!");
+            return $this->redirectInertia(route("setting.jabatan.create"), $toast);
+        }
         $input = $request->input();
         $validator = Validator::make($input, [
             "nama" => "required|string|max:255|min:3|unique:jabatan,nama",
@@ -85,11 +93,16 @@ class JabatanController extends Controller
             $toast = Toast::error("Gagal", "Terjadi kesalahan format atau duplikasi pada data form yang dimasukkan.");
             return $this->redirectInertia(route("setting.jabatan.create"), $toast);
         }
+        if (Ijin::find($input["ijin"])->admin == 1 && !request()->user()->id == 1) {
+            $toast = Toast::error("Gagal", "Perubahan jabatan ini tidak diperbolehkan!");
+            return $this->redirectInertia(route("setting.jabatan.create"), $toast);
+        }
 
         DB::beginTransaction();
         $jabatan                   = new Jabatan();
         $jabatan->nama             = $input["nama"];
         $jabatan->id_ijin          = $input["ijin"];
+        $jabatan->save();
         DB::commit();
 
         $toast = Toast::success("Sukses", "Berhasil menambah jabatan!");
@@ -99,7 +112,7 @@ class JabatanController extends Controller
 
     public function update(Request $request, Jabatan $jabatan)
     {
-        if ($jabatan->id == 1) {
+        if (request()->user()->id != 1) {
             $toast = Toast::success("Gagal", "Perubahan jabatan ini tidak diperbolehkan!");
             return $this->redirectInertia(route("setting.jabatan.show", ["jabatan" => $jabatan->id]), $toast);
         }
@@ -109,11 +122,16 @@ class JabatanController extends Controller
         ]);
         if ($validator->fails()) {
             $toast = Toast::error("Gagal", "Terjadi kesalahan format pada data form yang dimasukkan.");
-            return $this->redirectInertia(route("setting.jabatan.show",["jabatan"=>$jabatan->id]), $toast);
+            return $this->redirectInertia(route("setting.jabatan.show", ["jabatan" => $jabatan->id]), $toast);
+        }
+        if (Ijin::find($input["ijin"])->admin == 1 && !request()->user()->id == 1) {
+            $toast = Toast::error("Gagal", "Perubahan jabatan ini tidak diperbolehkan!");
+            return $this->redirectInertia(route("setting.jabatan.show", ["jabatan" => $jabatan->id]), $toast);
         }
 
         DB::beginTransaction();
-        $jabatan->r_surat          = $input["ijin"];
+        $jabatan->id_ijin   = $input["ijin"];
+        $jabatan->save();
         DB::commit();
 
         if ($jabatan->wasChanged()) {
@@ -124,5 +142,4 @@ class JabatanController extends Controller
 
         return $this->redirectInertia(route("setting.jabatan.show", ["jabatan" => $jabatan->id]), $toast);
     }
-
 }

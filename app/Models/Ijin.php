@@ -33,9 +33,10 @@ class Ijin extends Model
             return false;
         }
         $permission_array =  $permission->toArray();
+        // dd($permission,$permission_array);
         foreach ($keys as $value) {
             if (is_array($value)) {
-                $valid = $this->orPermission($permission, $value);
+                $valid = $this->orPermission(collect($permission_array), $value);
             } else {
                 if (empty($permission_array[$value])) {
                     return false;
@@ -50,7 +51,7 @@ class Ijin extends Model
         return true;
     }
 
-    public function orPermission(Collection $permission, $keys)
+    public function orPermission($permission, $keys)
     {
         $only = $permission->only($keys);
         foreach ($keys as $value) {

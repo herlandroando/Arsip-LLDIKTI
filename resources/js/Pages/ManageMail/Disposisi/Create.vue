@@ -143,7 +143,6 @@ export default {
         return rulesWithoutInbox;
       }
     });
-    const csrf = inject("csrf");
     // const limitUploadSize = "4096";
     const form = ref(null);
     const listSuratMasuk = ref([]);
@@ -211,7 +210,6 @@ export default {
       dateNowAndAfter,
       handleSubmitForm,
       handleListSuratMasuk,
-      csrf,
       rulesWithInbox,
       rulesWithoutInbox,
       rulesActivity,

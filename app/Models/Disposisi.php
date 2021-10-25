@@ -37,6 +37,16 @@ class Disposisi extends Model
         });
     }
 
+    public function scopeActive($query, int $limit = 10)
+    {
+        $query = $query->whereNotIn("status", [self::BERAKHIR, self::SELESAI])->orderBy("updated_at", "desc");
+        if ($limit > 0) {
+            return $query->limit($limit);
+        } else {
+            return $query;
+        }
+    }
+
     public function getIsiRingkasAttribute()
     {
         return Str::limit($this->attributes['isi'], 30, '');

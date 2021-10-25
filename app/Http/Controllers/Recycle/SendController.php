@@ -43,7 +43,7 @@ class SendController extends Controller
     public function __construct()
     {
         parent::__construct();
-        $this->setIndexActive("manage_mail.send");
+        $this->setIndexActive("recycle.send");
     }
 
 
@@ -145,12 +145,13 @@ class SendController extends Controller
         // dd($surat_masuk, "test");
         $surat_keluar->forceDelete();
         $toast = Toast::success("Hapus Permanen Berhasil", "Penghapusan surat masuk berhasil!");
-        return $this->redirectInertia(route("recycle.inbox.index"), $toast);
+        return $this->redirectInertia(route("recycle.send.index"), $toast);
     }
 
-    public function restore(SuratKeluar $surat_keluar){
+    public function restore($surat_keluar){
+        $surat_keluar = SuratKeluar::withTrashed()->find($surat_keluar);
         $surat_keluar->restore();
         $toast = Toast::success("Kembalikan Berhasil", "Pengembalian surat masuk berhasil!");
-        return $this->redirectInertia(route("recycle.inbox.index"), $toast);
+        return $this->redirectInertia(route("recycle.send.index"), $toast);
     }
 }

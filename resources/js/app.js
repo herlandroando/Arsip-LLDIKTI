@@ -90,8 +90,6 @@ createInertiaApp({
                 _sifatSurat
             ).provide("bagianInstansi",
                 _bagianInstansi
-            ).provide("csrf",
-                ref(document.querySelector('meta[name="csrf-token"]').content)
             )
             .mount(el)
     },

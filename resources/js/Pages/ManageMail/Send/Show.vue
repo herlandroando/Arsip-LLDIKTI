@@ -14,31 +14,39 @@
               style="margin-bottom: 20px"
             >
               <el-button-group>
-                <el-tooltip content="Ubah Surat" placement="top" effect="light">
-                  <el-button
-                    :type="editMode ? 'primary' : null"
-                    icon="el-icon-edit"
-                    @click="handleToggleEdit"
-                  ></el-button>
-                </el-tooltip>
-                <el-tooltip
+                <template v-if="canEdit()">
+                  <el-tooltip
+                    content="Ubah Surat"
+                    placement="top"
+                    effect="light"
+                  >
+                    <el-button
+                      :type="editMode ? 'primary' : null"
+                      icon="el-icon-edit"
+                      @click="handleToggleEdit"
+                    ></el-button>
+                  </el-tooltip>
+                </template>
+                <!-- <el-tooltip
                   content="Bagikan Surat"
                   placement="top"
                   effect="light"
                 >
                   <el-button icon="el-icon-share"></el-button>
-                </el-tooltip>
-                <el-tooltip
-                  content="Hapus Surat"
-                  placement="top"
-                  effect="light"
-                >
-                  <el-button
-                    @click="handleDialogWarnOpen"
-                    type="danger"
-                    icon="el-icon-delete"
-                  ></el-button>
-                </el-tooltip>
+                </el-tooltip> -->
+                <template v-if="canDelete()">
+                  <el-tooltip
+                    content="Hapus Surat"
+                    placement="top"
+                    effect="light"
+                  >
+                    <el-button
+                      @click="handleDialogWarnOpen"
+                      type="danger"
+                      icon="el-icon-delete"
+                    ></el-button>
+                  </el-tooltip>
+                </template>
               </el-button-group>
             </el-col>
           </el-row>
@@ -237,12 +245,15 @@
                 Tipe : {{ classificationFileType(file.tipe) }} <br />
                 Ukuran : {{ humanFileSize(file.ukuran) }}
               </div>
-              <el-button class="button" type="text">Download</el-button>
-              <el-button
+              <a :href="file.url" target="_blank"
+                ><el-button class="button" type="text">Download</el-button></a
+              >
+              <a
                 v-if="classificationFileType(file.tipe) !== 'Tidak Diketahui'"
-                class="button"
-                type="text"
-                >Buka</el-button
+                :href="file.url + '?open=1'"
+                target="_blank"
+              >
+                <el-button class="button" type="text">Buka</el-button></a
               >
             </el-card>
           </template>
@@ -252,12 +263,12 @@
           <el-upload
             class="upload-demo"
             :action="
-              routes('manage.inbox.upload.file', { surat_masuk: formData.id })
+              routes('manage.send.upload.file', { surat_masuk: formData.id })
             "
-            :headers="{ 'X-CSRF-TOKEN': csrf }"
             :on-error="handleErrorUpload"
             :on-remove="handleRemove"
             :on-success="handleSuccessUpload"
+            :headers="{'X-XSRF-TOKEN':getXSRF()}"
             :limit="4"
             :before-upload="handleValidation"
             :on-exceed="handleExceed"
@@ -295,12 +306,16 @@
 
 <script>
 import { reactive, ref } from "@vue/reactivity";
-import { computed, inject, onMounted } from "@vue/runtime-core";
-import { defaultProps, initializationView } from "@shared/InertiaConfig.js";
+import { computed, inject, onMounted, onUpdated } from "@vue/runtime-core";
+import {
+  defaultProps,
+  initializationView,
+  getPermission,
+} from "@shared/InertiaConfig.js";
 import Layout from "@shared/Layout.vue";
 import {
   humanFileSize,
-  classificationFileType,
+  classificationFileType, getXSRF
 } from "@shared/HelperFunction.js";
 import _ from "lodash";
 import { ElNotification } from "element-plus";
@@ -323,13 +338,40 @@ export default {
     const bagianInstansi = reactive(inject("bagianInstansi"));
     const editMode = ref(false);
 
-    const csrf = inject("csrf");
+    // const csrf = inject("csrf");
     const limitUploadSize = "4096";
     const dialogWarnVisible = ref(false);
     const form = ref(null);
     const fileSurat = ref([]);
     const processingForm = ref(false);
     const isCreatorMe = ref(props.detailData.pembuatnya_saya);
+
+    const permission = getPermission(props);
+    const canDelete = () => {
+      if (permission.d_surat) {
+        return true;
+      }
+      if (
+        permission.d_miliksurat &&
+        props.detailData.id_pembuat == props._user.id
+      ) {
+        return true;
+      }
+
+      return false;
+    };
+
+     const canEdit = () => {
+      if (permission.w_suratkeluar && permission.w_all_surat) {
+        return true;
+      }
+      if (
+        permission.w_suratkeluar &&
+        props.detailData.id_pembuat == props._user.id
+      )
+        return true;
+      return false;
+    };
 
     const tanggal_surat_computed = computed({
       get: () => formData.tanggal_surat,
@@ -373,13 +415,17 @@ export default {
       initData();
     });
 
+    onUpdated(() => {
+      initData();
+    });
+
     function initData(withFile = true) {
       if (!_.isEmpty(props.detailData)) {
         let data = props.detailData;
         console.log(data);
         formData.id = data.id;
         formData.perihal = data.perihal;
-        formData.tanggal_surat = data.tanggal_surat;
+        formData.tanggal_surat = new Date(data.tanggal_surat);
         formData.no_surat = data.no_surat;
         formData.tujuan = data.tujuan;
         formData.asal_surat = data.asal_surat;
@@ -388,7 +434,7 @@ export default {
         formData.id_sifat = data.id_sifat;
         if (withFile) {
           optionalData.file_surat = _.isEmpty(data.file_surat)
-            ? false
+            ? []
             : data.file_surat;
           fileSurat.value = _.isEmpty(data.file_surat_form)
             ? []
@@ -398,7 +444,7 @@ export default {
         optionalData.nama_pembuat = data.nama_pembuat;
         optionalData.asal_surat = data.bagian_asal_surat;
         optionalData.sifat = data.sifat;
-        optionalData.dibuat_tanggal = data.dibuat_tanggal;
+        optionalData.dibuat_tanggal = new Date(data.dibuat_tanggal);
         // formData.dibuat_tanggal = data.dibuat_tanggal;
       }
     }
@@ -425,7 +471,7 @@ export default {
       console.log(is_valid);
       if (is_valid) {
         Inertia.put(
-          route("manage.inbox.update", { surat_masuk: formData.id }),
+          route("manage.send.update", { surat_masuk: formData.id }),
           formData,
           {
             preserveState: true,
@@ -482,7 +528,7 @@ export default {
         return false;
       }
       axios
-        .post(route("manage.inbox.delete.file", { surat_masuk: formData.id }), {
+        .post(route("manage.send.delete.file", { surat_masuk: formData.id }), {
           id: file.id,
         })
         .then((response) => {
@@ -526,7 +572,7 @@ export default {
     function handleDialogWarnConfirm() {
       dialogWarnVisible.value = false;
       Inertia.delete(
-        route("manage.inbox.destroy", { surat_masuk: formData.id })
+        route("manage.send.destroy", { surat_masuk: formData.id })
       );
     }
 
@@ -552,7 +598,7 @@ export default {
       handleValidation,
       humanFileSize,
       classificationFileType,
-      csrf,
+    //   csrf,
       bagianInstansi,
       ruleComputed,
       isCreatorMe,
@@ -565,6 +611,10 @@ export default {
       optionalData,
       processingForm,
       dialogWarnVisible,
+      canDelete,
+      canEdit,
+      permission,
+      getXSRF
     };
   },
 };

@@ -106,6 +106,7 @@ class DisposisiController extends Controller
                 // dd($item->pengirim,$item);
                 return [
                     "id"                => $item->id,
+                    "id_pengirim"       => $disposisi->id_pengirim ?? null,
                     "no_disposisi"      => $item->no_disposisi,
                     "status"            => $item->status,
                     "asal"              => $item->pengirim->nama,
@@ -151,6 +152,7 @@ class DisposisiController extends Controller
         $data = $disposisi->map(function ($item, $key) {
             return [
                 "id"                => $item->id,
+                "id_pengirim"       => $disposisi->id_pengirim ?? null,
                 "no_disposisi"      => $item->no_disposisi,
                 "status"            => $item->status,
                 "asal"              => $item->pengirim->nama,
@@ -180,6 +182,8 @@ class DisposisiController extends Controller
             "is_suratmasuk"     => $disposisi->is_suratmasuk ?? null,
             "no_suratmasuk"     => $surat_masuk->no_surat ?? null,
             "id_suratmasuk"     => $disposisi->id_suratmasuk ?? null,
+            "id_pengirim"       => $disposisi->id_pengirim ?? null,
+            "id_jabatan"        => $disposisi->id_jabatan ?? null,
             "tenggat_waktu"     => $disposisi->expired_at,
             "no_disposisi"      => $disposisi->no_disposisi,
             "isi"               => $disposisi->isi,
@@ -224,6 +228,12 @@ class DisposisiController extends Controller
      */
     public function update(Request $request, Disposisi $disposisi)
     {
+        $valid_user_created = $request->user()->jabatan->ijin->w_disposisi && $request->user()->id == $disposisi->id_pembuat;
+        $valid_admin = $request->user()->jabatan->ijin->admin;
+        if (!$valid_user_created && !$valid_admin) {
+            $toast = Toast::error("Gagal", "Anda tidak diperbolehkan melakukan tindakan ini.");
+            return $this->redirectInertia(route("manage.disposisi.show", ["disposisi" => $disposisi->id]), $toast);
+        }
         $input = $request->input();
         $validator = Validator::make($input, [
             "is_suratmasuk" => "required|boolean",
@@ -239,7 +249,7 @@ class DisposisiController extends Controller
 
         DB::beginTransaction();
         $disposisi->is_suratmasuk = false;
-        if (!empty($input["no_suratmasuk"])){
+        if (!empty($input["no_suratmasuk"])) {
             $disposisi->is_suratmasuk = true;
             $disposisi->id_suratmasuk = SuratMasuk::whereNoSurat($input["no_suratmasuk"])->first()->id;
         }
@@ -257,7 +267,7 @@ class DisposisiController extends Controller
         return $this->redirectInertia(route("manage.disposisi.show", ["disposisi" => $disposisi->id]), $toast);
     }
 
-     /**
+    /**
      * Show the form for creating a new resource.
      *
      * @return \Illuminate\Http\Response
@@ -266,7 +276,7 @@ class DisposisiController extends Controller
     {
         // session(["temp_file" => []]);
         // 1625788800/AO0O1625788800.jpg
-        $this->setTitle("Buat Disposisi",true);
+        $this->setTitle("Buat Disposisi", true);
         // session(["temp_file"=>null]);
         // dd(session("temp_file"));
 
@@ -280,8 +290,14 @@ class DisposisiController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request, Disposisi $disposisi)
+    public function store(Request $request)
     {
+        $valid_user = $request->user()->jabatan->ijin->w_disposisi;
+        $valid_admin = $request->user()->jabatan->ijin->w_disposisi && $request->user()->jabatan->ijin->admin;
+        if (!$valid_user && !$valid_admin) {
+            $toast = Toast::error("Gagal", "Anda tidak diperbolehkan melakukan tindakan ini.");
+            return $this->redirectInertia(route("manage.disposisi.create"), $toast);
+        }
         $input = $request->input();
         $validator = Validator::make($input, [
             "is_suratmasuk" => "required|boolean",
@@ -296,8 +312,9 @@ class DisposisiController extends Controller
         }
 
         DB::beginTransaction();
+        $disposisi = new Disposisi();
         $disposisi->is_suratmasuk = false;
-        if (!empty($input["no_suratmasuk"])){
+        if (!empty($input["no_suratmasuk"])) {
             $disposisi->is_suratmasuk = true;
             $disposisi->id_suratmasuk = SuratMasuk::whereNoSurat($input["no_suratmasuk"])->first()->id;
         }
@@ -312,6 +329,81 @@ class DisposisiController extends Controller
             $toast = Toast::success("Sukses", "Tidak ada yang berubah.");
         }
 
+        return $this->redirectInertia(route("manage.disposisi.show", ["disposisi" => $disposisi->id]), $toast);
+    }
+
+    public function updateStatus(Request $request, Disposisi $disposisi)
+    {
+        $status = $request->input("status", null);
+        $is_valid = false;
+        if (!empty($status)) {
+            switch ($status) {
+                case Disposisi::DITINJAU:
+                    $is_valid = in_array($disposisi->status, [Disposisi::SEDANG_DIPROSES, Disposisi::REVISI]);
+                    $is_valid = $request->user()->jabatan->id == $disposisi->id_jabatan;
+                    break;
+                case Disposisi::SEDANG_DIPROSES:
+                    $is_valid = $disposisi->status == Disposisi::BELUM_DIPROSES;
+                    $is_valid = $request->user()->jabatan->id == $disposisi->id_jabatan;
+                    break;
+                case Disposisi::REVISI:
+                    $is_valid = $disposisi->status == Disposisi::DITINJAU;
+                    $is_valid = $request->user()->id == $disposisi->id_pembuat;
+                    break;
+                case Disposisi::SELESAI:
+                    $is_valid = $disposisi->status == Disposisi::DITINJAU;
+                    $is_valid = $request->user()->id == $disposisi->id_pembuat;
+                    break;
+                default:
+                    # code...
+                    break;
+            }
+            if ($is_valid) {
+                $last_status = $disposisi->status;
+                $disposisi->status = $status;
+                $disposisi->save();
+                $activity = new DetailDisposisi();
+                $activity->keterangan = $status;
+                $activity->is_update_status = 1;
+                $activity->id_disposisi = $disposisi->id;
+                $activity->id_pembuat = $request->user()->id;
+                $activity->created_at = now();
+                $activity->save();
+                $toast = Toast::success("Ubah Status Berhasil", "Berhasil mengubah status disposisi dari $last_status menjadi $status.");
+                return $this->redirectInertia(route("manage.disposisi.show", ["disposisi" => $disposisi->id]), $toast);
+            }
+        }
+        $toast = Toast::error("Gagal", "Terjadi kesalahan pada perubahan status, Silahkan refresh browser anda.");
+        return $this->redirectInertia(route("manage.disposisi.show", ["disposisi" => $disposisi->id]), $toast);
+    }
+
+    public function createActivity(Request $request, Disposisi $disposisi)
+    {
+        if (in_array($disposisi->status, [Disposisi::DITINJAU, Disposisi::SELESAI, Disposisi::BERAKHIR])) {
+            $toast = Toast::error("Gagal", "Tidak bisa mengirim pesan pada status yang telah selesai, ditinjau, atau berakhir.");
+            return $this->redirectInertia(route("manage.disposisi.show", ["disposisi" => $disposisi->id]), $toast);
+        }
+        if ($request->user()->id_jabatan != $disposisi->id_jabatan && !$request->user()->id != $disposisi->id_pembuat) {
+            $toast = Toast::error("Gagal", "Tidak bisa mengirim pesan pada status. Anda tidak termasuk dalam aktifitas disposisi ini.");
+            return $this->redirectInertia(route("manage.disposisi.show", ["disposisi" => $disposisi->id]), $toast);
+        }
+        $input = $request->input();
+        $validator = Validator::make($input, [
+            "keterangan" => "required|string|min:2|max:500",
+        ]);
+        if ($validator->fails()) {
+            $toast = Toast::error("Gagal", "Terjadi kesalahan format pada data form yang dimasukkan.");
+            return $this->redirectInertia(route("manage.disposisi.show", ["disposisi" => $disposisi->id]), $toast);
+        }
+        $activity = new DetailDisposisi;
+        $activity->keterangan = $input["keterangan"];
+        $activity->id_disposisi = $disposisi->id;
+        $activity->id_pembuat = $request->user()->id;
+        $activity->is_update_status = 0;
+        $activity->created_at = now();
+        $activity->save();
+
+        $toast = Toast::success("Pesan Terkirim", "Keterangan disposisi anda telah terkirim.");
         return $this->redirectInertia(route("manage.disposisi.show", ["disposisi" => $disposisi->id]), $toast);
     }
 
@@ -331,4 +423,16 @@ class DisposisiController extends Controller
         }
     }
 
+    public function destroy(Disposisi $disposisi)
+    {
+        $valid_user_deleted = request()->user()->jabatan->ijin->d_surat || (request()->user()->jabatan->ijin->d_miliksurat && request()->user()->id == $disposisi->id_pembuat);
+        if (!$valid_user_deleted) {
+            $toast = Toast::error("Gagal", "Anda tidak diperbolehkan melakukan tindakan ini.");
+            return $this->redirectInertia(route("manage.disposisi.index"), $toast);
+        }
+        // dd($surat_keluar, "test");
+        $disposisi->delete();
+        $toast = Toast::success("Hapus Disposisi", "Penghapusan disposisi berhasil!");
+        return $this->redirectInertia(route("manage.disposisi.index"), $toast);
+    }
 }

@@ -99,6 +99,7 @@ class InboxController extends Controller
             $data = $surat_masuk->map(function ($item, $key) {
                 return [
                     "id"            => $item->id,
+                    "id_pembuat"    => $item->id_pembuat ?? 0,
                     "no_surat"      => $item->no_surat,
                     "sifat"         => $item->sifatSurat->nama,
                     "asal_surat"    => $item->asal_surat,
@@ -112,7 +113,7 @@ class InboxController extends Controller
         } else {
             $this->setData("isAvailable", false);
         }
-
+        // dd($data);
         $this->setTitle("Surat Masuk");
 
         return $this->runInertia("ManageMail/Inbox/Index");
@@ -143,6 +144,7 @@ class InboxController extends Controller
         $data = $surat_masuk->map(function ($item, $key) {
             return [
                 "id"            => $item->id,
+                "id_pembuat"    => $item->id_pembuat ?? 0,
                 "no_surat"      => $item->no_surat,
                 "sifat"         => $item->sifatSurat->nama,
                 "asal_surat"    => $item->asal_surat,
@@ -180,6 +182,12 @@ class InboxController extends Controller
      */
     public function store(Request $request)
     {
+        $valid_user = $request->user()->jabatan->ijin->w_suratmasuk;
+        $valid_admin = $request->user()->jabatan->ijin->w_suratmasuk && $request->user()->jabatan->ijin->admin;
+        if (!$valid_user && !$valid_admin) {
+            $toast = Toast::error("Gagal", "Anda tidak diperbolehkan melakukan tindakan ini.");
+            return $this->redirectInertia(route("manage.inbox.show"), $toast);
+        }
         $input = $request->input();
         $validator = Validator::make($input, [
             "perihal" => "required|string|max:254",
@@ -210,8 +218,8 @@ class InboxController extends Controller
             foreach ($temp_file as $file) {
                 $part_name_file                     = explode(".", $file["id"]);
                 $extension                          = end($part_name_file) ?? "unknown";
-                $path_file                          = "images/temp/{$file['id']}";
-                $target_path                        = "images/dokumen_sm/{$surat_masuk->id}/";
+                $path_file                          = "temp/{$file['id']}";
+                $target_path                        = "dokumen_sm/{$surat_masuk->id}/";
                 $file_name                          = Str::random(18) . "." . $extension;
 
                 $file_surat_masuk                   = new DokumenSuratMasuk;
@@ -230,7 +238,7 @@ class InboxController extends Controller
 
         session(["temp_file" => null]);
 
-        return $this->redirectInertia(route("manage.inbox.create"), $toast);
+        return $this->redirectInertia(route("manage.inbox.show", ["surat_masuk" => $surat_masuk->id]), $toast);
         // perihal: "",
         // tanggal_surat: "",
         // no_surat: "",
@@ -248,9 +256,11 @@ class InboxController extends Controller
      */
     public function show(SuratMasuk $surat_masuk)
     {
+        // dd($surat_masuk->created_at);
         // dd($surat_masuk->user, $surat_masuk);
         $data = [
             "id"                => $surat_masuk->id,
+            "id_pembuat"        => $surat_masuk->id_pembuat,
             "perihal"           => $surat_masuk->perihal,
             "tanggal_surat"     => $surat_masuk->tanggal_surat,
             "no_surat"          => $surat_masuk->no_surat,
@@ -266,7 +276,7 @@ class InboxController extends Controller
                         "nama"      => $item->nama,
                         "ukuran"    => $item->ukuran,
                         "tipe"      => $item->tipe,
-                        "url"       => public_path("")
+                        "url" => route("manage.inbox.download", ["id" => $item->id, "name" => $item->alias])
                     ];
                 }
             ),
@@ -305,6 +315,12 @@ class InboxController extends Controller
      */
     public function update(Request $request, SuratMasuk $surat_masuk)
     {
+        $valid_user_created = $request->user()->jabatan->ijin->w_suratmasuk && $request->user()->id == $surat_masuk->id_pembuat;
+        $valid_admin = $request->user()->jabatan->ijin->admin;
+        if (!$valid_user_created && !$valid_admin) {
+            $toast = Toast::error("Gagal", "Anda tidak diperbolehkan melakukan tindakan ini.");
+            return $this->redirectInertia(route("manage.inbox.show", ["surat_masuk" => $surat_masuk->id]), $toast);
+        }
         $input = $request->input();
         $validator = Validator::make($input, [
             "perihal" => "required|string|max:254",
@@ -347,6 +363,11 @@ class InboxController extends Controller
      */
     public function destroy(SuratMasuk $surat_masuk)
     {
+        $valid_user_deleted = request()->user()->jabatan->ijin->d_surat || (request()->user()->jabatan->ijin->d_miliksurat && request()->user()->id == $surat_masuk->id_pembuat);
+        if (!$valid_user_deleted) {
+            $toast = Toast::error("Gagal", "Anda tidak diperbolehkan melakukan tindakan ini.");
+            return $this->redirectInertia(route("manage.inbox.index"), $toast);
+        }
         // dd($surat_masuk, "test");
         $surat_masuk->delete();
         $toast = Toast::success("Hapus Surat Masuk", "Penghapusan surat masuk berhasil!");
@@ -358,7 +379,7 @@ class InboxController extends Controller
         $session_temp_file = session("temp_file");
         $id = $request->input("id");
         if (empty($session_temp_file) || empty($id)) {
-            return response("failed", Response::HTTP_BAD_REQUEST);
+            return response("failed.not_found", Response::HTTP_BAD_REQUEST);
         }
         $test = "";
         $filtered = array_filter($session_temp_file, function ($value) use ($id, &$test) {
@@ -380,10 +401,22 @@ class InboxController extends Controller
         if (empty($file)) {
             return response()->json(["success" => false, "message" => "File is null."], Response::HTTP_BAD_REQUEST);
         }
+        $valid_user_created = $request->user()->jabatan->ijin->w_suratmasuk && $request->user()->id == $surat_masuk->id_pembuat;
+        $valid_admin = $request->user()->jabatan->ijin->w_suratmasuk && $request->user()->jabatan->ijin->admin;
+        if (!$valid_user_created && !$valid_admin) {
+            return response("failed.validation_user", Response::HTTP_BAD_REQUEST);
+        }
+        $validator = Validator::make(["files" => $file], [
+            "files" => "required|file|max:4096|mimes:png,jpg,jpeg,gif,bmp,pdf"
+        ]);
+        if ($validator->fails()) {
+            return response("failed.validation", Response::HTTP_BAD_REQUEST);
+        }
+
         $id_surat                           = $surat_masuk->id;
         $extension                          = $file->getClientOriginalExtension();
         $file_name                          = Str::random(18) . "." . $extension;
-        $file->storeAs("images/dokumen_sm/$id_surat", $file_name);
+        $file->storeAs("dokumen_sm/$id_surat", $file_name);
 
         $file_surat_masuk                   = new DokumenSuratMasuk;
         $file_surat_masuk->ukuran           = $file->getSize();
@@ -402,26 +435,33 @@ class InboxController extends Controller
                 "nama" => $file_surat_masuk->nama,
                 "ukuran" => $file_surat_masuk->ukuran,
                 "tipe" => $file_surat_masuk->tipe,
-                "url" => public_path("")
+                "url" => route("manage.inbox.download", ["id" => $file_surat_masuk->id, "name" => $file_surat_masuk->alias])
             ]
         ]);
     }
 
     public function deleteFile(Request $request, SuratMasuk $surat_masuk)
     {
+        $valid_user_created = $request->user()->jabatan->ijin->w_suratmasuk && $request->user()->id == $surat_masuk->id_pembuat;
+        $valid_admin = $request->user()->jabatan->ijin->w_suratmasuk && $request->user()->jabatan->ijin->admin;
+        if (!$valid_user_created && !$valid_admin) {
+            return response("failed.validation_user", Response::HTTP_BAD_REQUEST);
+        }
         $id_surat = $surat_masuk->id;
-        $path = "images/dokumen_sm/$id_surat/";
+        $path = "dokumen_sm/$id_surat/";
         $id_file = $request->input("id");
         if (empty($id_file)) {
-            return response("failed", Response::HTTP_BAD_REQUEST);
+            return response("failed.not_found", Response::HTTP_BAD_REQUEST);
         }
         $dokumen = DokumenSuratMasuk::where("id_suratmasuk", $id_surat)->where("id", $id_file)->first();
         if (empty($dokumen))
-            return response("failed", Response::HTTP_BAD_REQUEST);
+            return response("failed.not_found_dokumen", Response::HTTP_BAD_REQUEST);
         $file_name = $dokumen->alias;
         $full_path = $path . $file_name;
-        if (Storage::exists($full_path))
+
+        if (Storage::exists($full_path)) {
             Storage::delete($full_path);
+        }
         $dokumen->delete();
         return response("success", Response::HTTP_OK);
     }
@@ -433,15 +473,53 @@ class InboxController extends Controller
      */
     public function uploadTemp(Request $request)
     {
+        $valid_user = $request->user()->jabatan->ijin->w_suratmasuk;
+        $valid_admin = $request->user()->jabatan->ijin->w_suratmasuk && $request->user()->jabatan->ijin->admin;
+        if (!$valid_user && !$valid_admin) {
+            return response("failed.validation_user", Response::HTTP_BAD_REQUEST);
+        }
         $file = $request->file("file");
+        $validator = Validator::make(["files" => $file], [
+            "files" => "required|file|max:4096|mimes:png,jpg,jpeg,gif,bmp,pdf"
+        ]);
+        if ($validator->fails()) {
+            return response("failed.validation", Response::HTTP_BAD_REQUEST);
+        }
+
         $date = now()->startOfDay()->timestamp;
         $file_name = Str::random(4) . (string)$date . ".{$file->extension()}";
         $store_session_name =  "$date/$file_name";
-        $file->storeAs("images/temp/$date", $file_name);
+        $file->storeAs("temp/$date", $file_name);
         $temp_file = session("temp_file") ?? [];
         array_push($temp_file, ["name" => $file->getClientOriginalName(), "id" => $store_session_name]);
         session(["temp_file" => $temp_file]);
 
         return response()->json(["name" => $file->getClientOriginalName(), "id" => $store_session_name]);
+    }
+
+    public function download(Request $request, $id, $name)
+    {
+        // gambar: ["png", "jpg", "jpeg", "gif", "bmp"],
+        // pdf
+        if (!$request->user()->jabatan->ijin->r_surat && !$request->user()->jabatan->ijin->admin) {
+            return $this->throwOrRedirect("Not Permitted to download.", 404);
+        }
+
+        $open = $request->query("open", 0);
+
+        $dokumen = DB::table('dokumen_sm')->where("id", $id)->where("alias", $name)->first();
+        if (empty($dokumen)) {
+            return $this->throwOrRedirect("File is not found.", 404);
+        }
+        // dd(,Storage::exists("dokumen_sm/$dokumen->id_suratmasuk/$dokumen->alias"));
+        if (Storage::exists("dokumen_sm/$dokumen->id_suratmasuk/$dokumen->alias")) {
+            if (in_array($dokumen->tipe, ["pdf", "jpg", "png", "jpeg", "gif", "bmp"]) && $open == 1)
+                return response()->file(storage_path("app/dokumen_sm/$dokumen->id_suratmasuk/$dokumen->alias"));
+            else {
+                return response()->download(storage_path("app/dokumen_sm/$dokumen->id_suratmasuk/$dokumen->alias", $dokumen->alias));
+            }
+        } else {
+            return $this->redirectInertia(route("errors.index", ["code" => 404]));
+        }
     }
 }

@@ -48,8 +48,9 @@ class PengaturanUmum extends Model
         $pengaturan_umum = PengaturanUmum::whereIn("nama", array_keys($this->settings))->get()->pluck("nilai", "nama");
         foreach ($pengaturan_umum as $key => $value) {
             if ($camel_case_key) {
-                $key = Str::camel($key);
+                $key = Str::snake($key);
             }
+            // dd($key);
             switch ($this->settings[$key]) {
                 case 'boolean':
                     $data[$key] = $this->getSettingBoolean($value);

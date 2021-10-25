@@ -22,10 +22,51 @@
       </el-row>
     </el-col>
     <el-col :offset="9" :span="6" class="" style="text-align: right">
-      <Link :href="routes('logout')" >
-        <span style="font-size: 14px"> Logout</span>
-      </Link></el-col
-    >
+      <el-popover
+        placement="bottom-start"
+        title="Profil Akun"
+        :width="300"
+        trigger="hover"
+      >
+        <template #reference>
+          <el-button
+            ><el-icon>
+              <avatar /> </el-icon
+          ></el-button>
+        </template>
+        <el-row class="profile-container">
+          <el-col :span="24" class="profile-data-container">
+            <p>
+              <b>{{ profile.nama }}</b>
+            </p>
+            <p style="color: var('--el-text-color-regular')">
+              @{{ profile.username }}
+            </p>
+            <p>
+              <b>{{ profile.jabatan }}</b>
+            </p>
+          </el-col>
+          <hr style="width: 100%" />
+          <el-col style="text-align: right" :span="24">
+            <Link
+              :href="
+                routes('profile', {
+                  user: profile.id,
+                  username: profile.username,
+                })
+              "
+            >
+              <el-button style="margin-right: 10px" type="primary">
+                Lihat Profil</el-button
+              >
+            </Link>
+            <Link :href="routes('logout')">
+              <el-button type="danger"> Logout</el-button>
+            </Link>
+          </el-col>
+        </el-row>
+      </el-popover>
+    </el-col>
   </el-row>
   <el-row
     type="flex"
@@ -68,10 +109,11 @@
 import { computed, ref } from "@vue/reactivity";
 import { inject } from "@vue/runtime-core";
 import { useMq } from "vue3-mq";
+import { Avatar } from "@element-plus/icons";
 import { Link } from "@inertiajs/inertia-vue3";
 
 export default {
-  components: { Link },
+  components: { Link, Avatar },
   emits: ["handleSidebar", "handleSearch"],
   props: {
     isActiveSidebar: { type: Boolean, default: false },
@@ -79,6 +121,7 @@ export default {
   },
   setup(props, { emit }) {
     const stateOpenSidebar = ref(false);
+    const profile = inject("user");
     const search = ref("");
     console.log(props.hasHeaderSearch, "header search active?");
     function handleSidebar() {
@@ -96,6 +139,7 @@ export default {
       handleSearch,
       search,
       useMq,
+      profile,
     };
   },
 };
@@ -190,6 +234,13 @@ input::-webkit-input-placeholder {
 }
 .search-form input::-webkit-input-placeholder {
   color: transparent;
+}
+
+.profile-container div {
+  padding: 10px 0px;
+}
+.profile-data-container p {
+  margin: 5px 0px;
 }
 
 @media only screen and (max-width: 768px) {
