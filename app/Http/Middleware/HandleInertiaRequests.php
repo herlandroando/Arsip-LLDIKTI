@@ -10,6 +10,8 @@ class HandleInertiaRequests extends Middleware
 {
     /**
      * The root template that's loaded on the first page visit.
+     * -------------------------------------------------
+     * Nama template halaman HTML yang akan dikirimkan ketika pertama kali mengakses.
      *
      * @see https://inertiajs.com/server-side-setup#root-template
      * @var string
@@ -18,6 +20,8 @@ class HandleInertiaRequests extends Middleware
 
     /**
      * Determines the current asset version.
+     * ------------------------------------
+     * Memberikan versi aset Inertia.
      *
      * @see https://inertiajs.com/asset-versioning
      * @param  \Illuminate\Http\Request  $request
@@ -30,6 +34,9 @@ class HandleInertiaRequests extends Middleware
 
     /**
      * Defines the props that are shared by default.
+     * --------------------------------------------
+     * Mengirimkan atribut yang akan di bagikan ke sisi klien
+     * setiap permintaan yang diminta di sisi klien
      *
      * @see https://inertiajs.com/shared-data
      * @param  \Illuminate\Http\Request  $request
@@ -38,10 +45,13 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request)
     {
         $user_result = [];
+        // Mengambil versi terakhir sistem
         $version_timestamp = PengaturanUmum::where("nama", "update_terakhir")->first();
+        // Mengambil pengaturan sistem
         $settings = PengaturanUmum::where("nama", "!=", "update_terakhir")->get()->makeHidden("id");
         $user = $request->user();
         if (!empty($user)) {
+            // Mendefinisikan data pengguna dan ijin-ijinnya
             $ijin = $user->jabatan->ijin->toArray();
             $ijin["super_admin"] = $user->id == 1;
             $user_result = [
@@ -53,6 +63,7 @@ class HandleInertiaRequests extends Middleware
                 "ijin" => $ijin,
             ];
         }
+        // Mendefinisikan data pengguna dan ijin-ijinnya yang akan dikirimkan ke sisi klien
         return array_merge(parent::share($request), [
             "_last_updated" => $version_timestamp->nilai ?? null,
             "_settings" => $settings,

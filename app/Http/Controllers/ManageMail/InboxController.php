@@ -77,6 +77,7 @@ class InboxController extends Controller
         }
         return $surat_masuk;
     }
+
     /**
      * Display a listing of the resource.
      *

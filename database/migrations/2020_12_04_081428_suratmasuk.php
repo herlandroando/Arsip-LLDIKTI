@@ -22,7 +22,6 @@ class Suratmasuk extends Migration
             $table->string('no_agenda', 150)->unique();
             $table->string('asal_surat', 255);
             $table->string('perihal', 255);
-            // $table->string('tembusan', 500)->nullable();
             $table->string('isi_ringkas', 500)->nullable();
             $table->dateTime("local_created_at")->nullable();
             $table->softDeletes();
