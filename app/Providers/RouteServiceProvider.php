@@ -62,21 +62,4 @@ class RouteServiceProvider extends ServiceProvider
         });
     }
 
-    public function map(Router $router)
-    {
-        $this->removeIndexPhpFromUrl();
-    }
-
-    protected function removeIndexPhpFromUrl()
-    {
-        if (\Illuminate\Support\Str::contains(request()->getRequestUri(), '/index.php/')) {
-            $url = str_replace('index.php/', '', request()->getRequestUri());
-
-            if (strlen($url) > 0) {
-                header("Location: $url", true, 301);
-                exit;
-            }
-        }
-    }
-
 }
