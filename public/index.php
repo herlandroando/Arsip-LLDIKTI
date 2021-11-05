@@ -5,17 +5,6 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
-
-/*
- * --------------------------------------------------------------------
- * REMOVE index.php from URI
- * --------------------------------------------------------------------
- */
-if (strpos($_SERVER['REQUEST_URI'], 'index.php') !== FALSE) {
-    $new_uri = preg_replace('#index\.php\/?#', '', $_SERVER['REQUEST_URI']);
-    header('Location: ' . $new_uri, TRUE, 301);
-    die();
-}
 /*
 |--------------------------------------------------------------------------
 | Check If The Application Is Under Maintenance
