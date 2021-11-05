@@ -5,6 +5,7 @@ namespace App\Http\Controllers\ManageMail;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Toast;
 use App\Models\DokumenSuratKeluar;
+use App\Models\PengaturanUmum;
 use App\Models\SuratKeluar;
 use App\Models\User;
 use App\Traits\HasGetFilterList;
@@ -57,8 +58,12 @@ class SendController extends Controller
 
     public function queryIndex($inertia_request = true)
     {
+        // $retensi        = PengaturanUmum::getSetting("retensi");
+        // $retensi        = now()->subYears($retensi);
         $search         = request()->query("search");
-        $surat_keluar    = SuratKeluar::query();
+        $surat_keluar   = SuratKeluar::query();
+        // $surat_masuk    = $surat_keluar->where("created_at", ">=", $retensi);
+
         // dd($surat_masuk);
         if (!empty($search)) {
             $surat_keluar->orWhere("asal_surat", "like", "%$search%")->orWhere("no_surat", "like", "%$search%")->orWhere("perihal", "like", "%$search%");
@@ -97,10 +102,11 @@ class SendController extends Controller
                     "sifat"         => $item->sifatSurat->nama,
                     "asal_surat"    => $item->jabatan->nama,
                     "perihal"       => $item->perihal,
-                    "tanggal_surat" => $item->tanggal_surat,
+                    "tanggal_surat" => Carbon::parse($item->tanggal_surat)->toString(),
                     "pembuat"       => $item->nama_pembuat,
                 ];
             });
+            $this->setData("deleteNotPermanent", PengaturanUmum::getSetting("delete_mail_not_permanent"));
             $this->setData("tableData", $data);
             $this->setData("isAvailable", true);
         } else {
@@ -142,7 +148,7 @@ class SendController extends Controller
                 "sifat"         => $item->sifatSurat->nama,
                 "asal_surat"    => $item->jabatan->nama,
                 "perihal"       => $item->perihal,
-                "tanggal_surat" => $item->tanggal_surat,
+                "tanggal_surat" => Carbon::parse($item->tanggal_surat)->toString(),
                 "pembuat"       => $item->nama_pembuat,
             ];
         });
@@ -188,7 +194,7 @@ class SendController extends Controller
             "no_surat"      => "required|string|max:100",
             "asal_surat"    => "required|exists:jabatan,id",
             "tujuan"        => "required|string|max:255",
-            "isi_ringkas"   => "required|string|max:500",
+            "isi_ringkas" => "nullable|string|max:500",
         ]);
         if ($validator->fails()) {
             // dd($validator->failed());
@@ -264,7 +270,7 @@ class SendController extends Controller
             "id" => $surat_keluar->id,
             "id_pembuat" => $surat_keluar->id_pembuat,
             "perihal" => $surat_keluar->perihal,
-            "tanggal_surat" => $surat_keluar->tanggal_surat,
+            "tanggal_surat" => Carbon::parse($surat_keluar->tanggal_surat)->toString(),
             "no_surat" => $surat_keluar->no_surat,
             "tujuan" => $surat_keluar->tujuan,
             "asal_surat" => $surat_keluar->asal_surat ?? null,
@@ -293,9 +299,10 @@ class SendController extends Controller
             "pembuatnya_saya" =>  $is_creator_me,
             "submit_oleh" => $surat_keluar->user->submit_oleh ?? "Akun Terhapus",
             "bagian_asal_surat" => $surat_keluar->jabatan->nama ?? "Tidak Diketahui",
-            "dibuat_tanggal" => $surat_keluar->created_at,
+            "dibuat_tanggal" => Carbon::parse($surat_keluar->created_at)->toString(),
         ];
 
+        $this->setData("deleteNotPermanent", PengaturanUmum::getSetting("delete_mail_not_permanent"));
         $this->setTitle("Detail Surat Keluar", true);
         $this->setData("detailData", $data);
         return $this->runInertia("ManageMail/Send/Show");
@@ -336,7 +343,7 @@ class SendController extends Controller
             "no_surat"      => "required|string|max:100",
             "asal_surat"    => "required|exists:jabatan,id",
             "tujuan"        => "required|string|max:255",
-            "isi_ringkas"   => "required|string|max:500",
+            "isi_ringkas" => "nullable|string|max:500",
         ]);
         if ($validator->fails()) {
             $toast = Toast::error("Gagal", "Terjadi kesalahan format pada data form yang dimasukkan.");
@@ -370,13 +377,23 @@ class SendController extends Controller
      */
     public function destroy(SuratKeluar $surat_keluar)
     {
-        $valid_user_deleted = request()->user()->jabatan->ijin->d_surat || (request()->user()->jabatan->ijin->d_miliksurat && request()->user()->id == $surat_keluar->id_pembuat);
-        if (!$valid_user_deleted) {
-            $toast = Toast::error("Gagal", "Anda tidak diperbolehkan melakukan tindakan ini.");
-            return $this->redirectInertia(route("manage.send.index"), $toast);
+        $is_delete_permanent = PengaturanUmum::getSetting("delete_mail_not_permanent");
+        if ($is_delete_permanent) {
+            $valid_user_deleted = request()->user()->jabatan->ijin->dp_surat;
+            if (!$valid_user_deleted) {
+                $toast = Toast::error("Gagal", "Anda tidak diperbolehkan melakukan tindakan ini.");
+                return $this->redirectInertia(route("manage.send.index"), $toast);
+            }
+            $surat_keluar->forceDelete();
+        } else {
+            $valid_user_deleted = request()->user()->jabatan->ijin->d_surat || (request()->user()->jabatan->ijin->d_miliksurat && request()->user()->id == $surat_masuk->id_pembuat);
+            if (!$valid_user_deleted) {
+                $toast = Toast::error("Gagal", "Anda tidak diperbolehkan melakukan tindakan ini.");
+                return $this->redirectInertia(route("manage.send.index"), $toast);
+            }
+            $surat_keluar->delete();
         }
         // dd($surat_keluar, "test");
-        $surat_keluar->delete();
         $toast = Toast::success("Hapus Surat Keluar", "Penghapusan surat keluar berhasil!");
         return $this->redirectInertia(route("manage.send.index"), $toast);
     }

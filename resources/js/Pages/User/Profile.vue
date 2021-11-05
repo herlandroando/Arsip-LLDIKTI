@@ -128,7 +128,7 @@
                   :loading="processingForm"
                   @click="handleSubmitForm"
                 >
-                  Submit
+                  Ubah
                 </el-button>
               </el-col>
             </el-row>

@@ -211,7 +211,7 @@
                   :loading="processingForm"
                   @click="handleSubmitForm"
                 >
-                  Submit
+                  Ubah
                 </el-button>
               </el-col>
             </el-row>
@@ -268,7 +268,7 @@
             :on-error="handleErrorUpload"
             :on-remove="handleRemove"
             :on-success="handleSuccessUpload"
-            :headers="{'X-XSRF-TOKEN':getXSRF()}"
+            :headers="{ 'X-XSRF-TOKEN': getXSRF() }"
             :limit="4"
             :before-upload="handleValidation"
             :on-exceed="handleExceed"
@@ -291,7 +291,7 @@
       width="30%"
       center
     >
-      <span>Apakah anda yakin ingin menghapus surat ini?</span>
+      <span>Apakah anda yakin ingin menghapus surat ini? {{deleteNotPermanent?'':'(Surat akan terhapus permanent!)'}}</span>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="handleDialogWarnCancel">Tidak</el-button>
@@ -315,7 +315,8 @@ import {
 import Layout from "@shared/Layout.vue";
 import {
   humanFileSize,
-  classificationFileType, getXSRF
+  classificationFileType,
+  getXSRF,
 } from "@shared/HelperFunction.js";
 import _ from "lodash";
 import { ElNotification } from "element-plus";
@@ -331,6 +332,7 @@ export default {
       type: Object,
       default: () => {},
     },
+    deleteNotPermanent: { type: Boolean, default: () => true },
   },
   setup(props) {
     initializationView(props);
@@ -348,20 +350,26 @@ export default {
 
     const permission = getPermission(props);
     const canDelete = () => {
-      if (permission.d_surat) {
-        return true;
-      }
-      if (
-        permission.d_miliksurat &&
-        props.detailData.id_pembuat == props._user.id
-      ) {
-        return true;
+      if (props.deleteNotPermanent) {
+        if (permission.d_surat) {
+          return true;
+        }
+        if (
+          permission.d_miliksurat &&
+          props.detailData.id_pembuat == props._user.id
+        ) {
+          return true;
+        }
+      } else {
+        if (permission.dp_surat) {
+          return true;
+        }
       }
 
       return false;
     };
 
-     const canEdit = () => {
+    const canEdit = () => {
       if (permission.w_suratkeluar && permission.w_all_surat) {
         return true;
       }
@@ -598,7 +606,7 @@ export default {
       handleValidation,
       humanFileSize,
       classificationFileType,
-    //   csrf,
+      //   csrf,
       bagianInstansi,
       ruleComputed,
       isCreatorMe,
@@ -614,7 +622,7 @@ export default {
       canDelete,
       canEdit,
       permission,
-      getXSRF
+      getXSRF,
     };
   },
 };

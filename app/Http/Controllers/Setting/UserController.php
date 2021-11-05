@@ -269,6 +269,8 @@ class UserController extends Controller
      */
     public function show(User $user, $username)
     {
+        // dd($user);
+
         if ($user->username === $username) {
             $this->redirectInertia("404");
         }

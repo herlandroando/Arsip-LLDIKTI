@@ -164,7 +164,7 @@
                   :loading="processingForm"
                   @click="handleSubmitForm"
                 >
-                  Submit
+                  Ubah
                 </el-button>
               </el-col>
             </el-row>
@@ -244,7 +244,10 @@
       width="30%"
       center
     >
-      <span>Apakah anda yakin ingin menghapus surat ini?</span>
+      <span
+        >Apakah anda yakin ingin menghapus surat ini?
+        {{ deleteNotPermanent ? "" : "(Surat akan terhapus permanent!)" }}</span
+      >
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="handleDialogWarnCancel">Tidak</el-button>
@@ -283,6 +286,7 @@ export default {
       type: Object,
       default: () => {},
     },
+    deleteNotPermanent: { type: Boolean, default: () => true },
   },
   setup(props) {
     initializationView(props);
@@ -298,25 +302,31 @@ export default {
     const processingForm = ref(false);
     const permission = getPermission(props);
     const canDelete = () => {
-      if (permission.d_surat) {
-        return true;
-      }
-      if (
-        permission.d_miliksurat &&
-        props.detailData.id_pembuat == props._user.id
-      ) {
-        return true;
+      if (props.deleteNotPermanent) {
+        if (permission.d_surat) {
+          return true;
+        }
+        if (
+          permission.d_miliksurat &&
+          props.detailData.id_pembuat == props._user.id
+        ) {
+          return true;
+        }
+      } else {
+        if (permission.dp_surat) {
+          return true;
+        }
       }
 
       return false;
     };
     const canEdit = () => {
-    //   console.log(
-    //     "canEdit",
-    //     permission.w_suratmasuk,
-    //     props.detailData.id_pembuat == props._user.id,
-    //     permission.w_suratmasuk && permission.w_all_surat
-    //   );
+      //   console.log(
+      //     "canEdit",
+      //     permission.w_suratmasuk,
+      //     props.detailData.id_pembuat == props._user.id,
+      //     permission.w_suratmasuk && permission.w_all_surat
+      //   );
       if (permission.w_suratmasuk && permission.w_all_surat) {
         return true;
       }

@@ -122,7 +122,7 @@
                   :loading="processingForm"
                   @click="handleSubmitForm"
                 >
-                  Submit
+                  Ubah
                 </el-button>
               </el-col>
             </el-row>
@@ -165,7 +165,7 @@
                   :loading="processingForm"
                   @click="handleSubmitFormPassword"
                 >
-                  Submit
+                  Ubah
                 </el-button>
               </el-col>
             </el-row>

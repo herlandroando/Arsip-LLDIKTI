@@ -40,7 +40,10 @@
           </div>
           <div class="permission-footer-bar">
             <el-button-group
-              ><el-button :disabled="unableChange" @click="handleAddList" type="primary"
+              ><el-button
+                :disabled="unableChange"
+                @click="handleAddList"
+                type="primary"
                 ><b>+</b></el-button
               ><el-button
                 @click="isDialogWarnOpened = true"
@@ -112,7 +115,7 @@
                   <el-form-item prop="w_all_surat">
                     <el-checkbox
                       v-model="formData.w_all_surat"
-                      label="Membuat/Mengubah Semua Surat"
+                      label="Mengubah Semua Milik Surat"
                       :disabled="unableChange"
                     ></el-checkbox>
                   </el-form-item>
@@ -269,7 +272,7 @@
             <el-form-item prop="w_all_surat">
               <el-checkbox
                 v-model="formData.w_all_surat"
-                label="Membuat/Mengubah Semua Surat"
+                label="Mengubah Semua Milik Surat"
                 :disabled="unableChange"
               ></el-checkbox>
             </el-form-item>
@@ -469,9 +472,9 @@ export default {
       initData();
     });
 
-    onUpdated(()=>{
+    onUpdated(() => {
       initData();
-    })
+    });
 
     watch(
       () => _.cloneDeep(formData),
@@ -522,7 +525,9 @@ export default {
       let data = { ...formData };
       if (isEdit.value) {
         Inertia.put(
-          route("setting.permission.update", { permission: id }),
+          route("setting.permission.update", {
+            permission: props.selectedContent.id,
+          }),
           data,
           { preserveScroll: true }
         );

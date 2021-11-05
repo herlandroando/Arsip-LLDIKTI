@@ -93,12 +93,17 @@
           </el-menu-item>
         </template>
       </template>
+      <el-menu-item index="5">
+        <i class="el-icon-info"></i>
+        <template #title> Manual Program </template>
+      </el-menu-item>
       <el-menu-item
         v-if="useMq().mdMinus"
         class="text-error"
         @click="handleLogout"
+        index="6"
       >
-         <i class="el-icon-top-left"></i>
+        <i class="el-icon-top-left"></i>
         <template #title> Logout </template>
       </el-menu-item>
     </div>
@@ -108,10 +113,8 @@
 <script>
 import { Inertia } from "@inertiajs/inertia";
 import { Link } from "@inertiajs/inertia-vue3";
-import { reactive, ref } from "@vue/reactivity";
 import { useMq } from "vue3-mq";
 import { inject } from "@vue/runtime-core";
-
 
 export default {
   components: { Link },

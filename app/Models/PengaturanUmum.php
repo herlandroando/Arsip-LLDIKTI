@@ -17,10 +17,10 @@ class PengaturanUmum extends Model
 
     public $settings = ["delete_mail_not_permanent" => "boolean", "auto_delete_retensi_mail" => "boolean", "retensi" => "integer"];
 
-    public function scopeGetSetting($key)
+    public function scopeGetSetting($query, $key)
     {
         $this->hasSettingKey($key);
-        $value = PengaturanUmum::where("nama", $key)->first();
+        $value = $query->where("nama", $key)->first();
         switch ($this->settings[$key]) {
             case 'boolean':
                 return $this->getSettingBoolean($value->nilai);
@@ -34,10 +34,10 @@ class PengaturanUmum extends Model
         }
     }
 
-    public function scopeSetSetting($key, $value)
+    public function scopeSetSetting($query,$key, $value)
     {
         $this->hasSettingKey($key);
-        $pengaturan_umum = PengaturanUmum::where("nama", $key)->first();
+        $pengaturan_umum = $query->where("nama", $key)->first();
         $pengaturan_umum->nilai = $value;
         $pengaturan_umum->save();
     }
@@ -78,6 +78,7 @@ class PengaturanUmum extends Model
 
     public function hasSettingKey($key, $is_throw = true)
     {
+        // dd($key, $this->settings);
         if (!in_array($key, array_keys($this->settings))) {
             // if (env("APP_DEBUG", true)) {
             //     // dd("ss");

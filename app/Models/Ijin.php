@@ -20,6 +20,7 @@ class Ijin extends Model
         "dp_surat" => "boolean",
         "w_disposisi" => "boolean",
         "w_suratmasuk" => "boolean",
+        "w_all_surat" => "boolean",
         "w_suratkeluar" => "boolean",
         "admin" => "boolean",
     ];

@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Recycle;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Toast;
+use App\Models\PengaturanUmum;
 use App\Models\SuratMasuk;
 use App\Traits\HasGetFilterList;
 use App\Traits\HasManageableTableQuery;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class InboxController extends Controller
 {
@@ -48,8 +50,11 @@ class InboxController extends Controller
 
     public function queryIndex($inertia_request = true)
     {
+        // $retensi        = PengaturanUmum::getSetting("retensi");
+        // $retensi        = now()->subYears($retensi);
         $search         = request()->query("search");
-        $surat_masuk    = SuratMasuk::query()->onlyTrashed();
+        $surat_masuk    = SuratMasuk::query()->onlyTrashed();//->orWhere("created_at", "<", $retensi);
+
         // dd($surat_masuk);
         if (!empty($search)) {
             $surat_masuk->orWhere($this->table_name . ".asal_surat", "like", "%$search%")->orWhere($this->table_name . ".no_surat", "like", "%$search%")->orWhere($this->table_name . ".perihal", "like", "%$search%");
@@ -77,7 +82,7 @@ class InboxController extends Controller
 
         // $page        = $request->query("page", 1);
         $surat_masuk = $this->queryIndex();
-
+        // dd($surat_masuk->toSql());
         // dd("-");
         // $query = str_replace(array('?'), array('\'%s\''), $surat_masuk->toSql());
         // $query = vsprintf($query, $surat_masuk->getBindings());
@@ -95,6 +100,7 @@ class InboxController extends Controller
                     "perihal"       => $item->perihal,
                     "tanggal_surat" => $item->tanggal_surat,
                     "no_agenda"     => $item->no_agenda,
+                    // "is_retensi"    => $item->is_retensi == 1 ? true : false,
                 ];
             });
             $this->setData("tableData", $data);
@@ -139,6 +145,7 @@ class InboxController extends Controller
                 "perihal"       => $item->perihal,
                 "tanggal_surat" => $item->tanggal_surat,
                 "no_agenda"     => $item->no_agenda,
+                // "is_retensi"    => $item->is_retensi ?? 0,
             ];
         });
         $result["result"] = $data;

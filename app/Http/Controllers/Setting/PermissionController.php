@@ -45,7 +45,7 @@ class PermissionController extends Controller
 
         $this->setData("isSelectedAvailable", true);
         $this->setData("selectedContent", $permission);
-        $this->setData("unableChange", request()->user()->id != 1);
+        $this->setData("unableChange", request()->user()->id != 1 || $permission->id == 1);
         return $this->runInertia("Setting/Permission/Index");
     }
 
@@ -121,7 +121,7 @@ class PermissionController extends Controller
 
     public function update(Request $request, Ijin $permission)
     {
-        if (request()->user()->id != 1) {
+        if (request()->user()->id != 1 || $permission->id == 1) {
             $toast = Toast::success("Gagal", "Perubahan ijin ini tidak diperbolehkan!");
             return $this->redirectInertia(route("setting.permission.show", ["permission" => $permission->id]), $toast);
         }
@@ -160,7 +160,7 @@ class PermissionController extends Controller
         DB::commit();
 
         if ($permission->wasChanged()) {
-            $toast = Toast::success("Sukses", "Berhasil menambah ijin!");
+            $toast = Toast::success("Sukses", "Berhasil mengubah ijin!");
         } else {
             $toast = Toast::success("Sukses", "Tidak ada yang berubah.");
         }

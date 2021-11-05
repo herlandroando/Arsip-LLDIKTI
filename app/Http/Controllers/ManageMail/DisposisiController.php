@@ -106,7 +106,7 @@ class DisposisiController extends Controller
                 // dd($item->pengirim,$item);
                 return [
                     "id"                => $item->id,
-                    "id_pengirim"       => $disposisi->id_pengirim ?? null,
+                    "id_pengirim"       => $item->id_pengirim ?? null,
                     "no_disposisi"      => $item->no_disposisi,
                     "status"            => $item->status,
                     "asal"              => $item->pengirim->nama,
@@ -152,7 +152,7 @@ class DisposisiController extends Controller
         $data = $disposisi->map(function ($item, $key) {
             return [
                 "id"                => $item->id,
-                "id_pengirim"       => $disposisi->id_pengirim ?? null,
+                "id_pengirim"       => $item->id_pengirim ?? null,
                 "no_disposisi"      => $item->no_disposisi,
                 "status"            => $item->status,
                 "asal"              => $item->pengirim->nama,
@@ -177,6 +177,7 @@ class DisposisiController extends Controller
         // dd($surat_masuk->user, $surat_masuk);
         $surat_masuk = SuratMasuk::find($disposisi->id_suratmasuk);
         // dd($surat_masuk,$disposisi, $disposisi->is_suratmasuk);
+        // dd(Carbon::parse($disposisi->expired_at)->toString());
         $data = [
             "id"                => $disposisi->id,
             "is_suratmasuk"     => $disposisi->is_suratmasuk ?? null,
@@ -184,14 +185,14 @@ class DisposisiController extends Controller
             "id_suratmasuk"     => $disposisi->id_suratmasuk ?? null,
             "id_pengirim"       => $disposisi->id_pengirim ?? null,
             "id_jabatan"        => $disposisi->id_jabatan ?? null,
-            "tenggat_waktu"     => $disposisi->expired_at,
+            "tenggat_waktu"     => Carbon::parse($disposisi->expired_at)->toString(),//$disposisi->expired_at,
             "no_disposisi"      => $disposisi->no_disposisi,
             "isi"               => $disposisi->isi,
             "status"            => $disposisi->status,
-            "pengirim"          => $disposisi->pengirim->nama,
-            "tujuan"            => $disposisi->jabatan->nama,
-            "tanggal_buat"      => $disposisi->created_at,
-            "tanggal_ubah"      => $disposisi->updated_at,
+            "pengirim"          => $disposisi->pengirim->nama ?? "Akun Terhapus",
+            "tujuan"            => $disposisi->jabatan->nama ?? "Tidak Diketahui",
+            "tanggal_buat"      => Carbon::parse($disposisi->created_at)->toString(),
+            "tanggal_ubah"      => Carbon::parse($disposisi->updated_at)->toString(),
         ];
         $activity_data = $disposisi->detailDisposisi()->orderBy("id")->get()->map(function ($item, $key) {
             if ($item->keterangan === 'Berakhir' && empty($item->id_pembuat)) {
@@ -237,7 +238,7 @@ class DisposisiController extends Controller
         $input = $request->input();
         $validator = Validator::make($input, [
             "is_suratmasuk" => "required|boolean",
-            "no_suratmasuk" => "required_if:is_suratmasuk,true|exists:suratmasuk,no_surat",
+            "no_suratmasuk" => "exclude_if:is_suratmasuk,false|exists:suratmasuk,no_surat",
             "tenggat_waktu" => "required|date|after_or_equal:now",
             "no_disposisi" => "required|string|max:255",
             "isi" => "required|string|max:500",
@@ -298,17 +299,22 @@ class DisposisiController extends Controller
             $toast = Toast::error("Gagal", "Anda tidak diperbolehkan melakukan tindakan ini.");
             return $this->redirectInertia(route("manage.disposisi.create"), $toast);
         }
+
         $input = $request->input();
+        // dd($input);
         $validator = Validator::make($input, [
             "is_suratmasuk" => "required|boolean",
-            "no_suratmasuk" => "required_if:is_suratmasuk,true|exists:suratmasuk,no_surat",
+            "no_suratmasuk" => "exclude_if:is_suratmasuk,false|exists:suratmasuk,no_surat",
             "tenggat_waktu" => "required|date|after_or_equal:now",
             "no_disposisi" => "required|string|max:255",
             "isi" => "required|string|max:500",
+            "tujuan" => "required|exists:jabatan,id",
         ]);
+        // dd($validator->errors());
+
         if ($validator->fails()) {
             $toast = Toast::error("Gagal", "Terjadi kesalahan format pada data form yang dimasukkan.");
-            return $this->redirectInertia(route("manage.disposisi.show", ["disposisi" => $disposisi->id]), $toast);
+            return $this->redirectInertia(route("manage.disposisi.create"), $toast);
         }
 
         DB::beginTransaction();
@@ -320,7 +326,10 @@ class DisposisiController extends Controller
         }
         $disposisi->expired_at    = Carbon::parse($input["tenggat_waktu"]);
         $disposisi->no_disposisi  = $input["no_disposisi"];
+        $disposisi->id_jabatan    = $input["tujuan"];
+        $disposisi->id_pengirim   = $request->user()->id;
         $disposisi->isi     = $input["isi"];
+        $disposisi->status  = Disposisi::BELUM_DIPROSES;
         $disposisi->save();
         DB::commit();
         if ($disposisi->wasChanged()) {

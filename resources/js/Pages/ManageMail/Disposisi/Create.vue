@@ -31,7 +31,7 @@
                     placeholder="Masukkan No. Surat Masuk."
                     :remote-method="handleListSuratMasuk"
                     :loading="processingInputRequest"
-                    style="width: 49%"
+                    class="input-no-surat"
                   >
                     <el-option
                       v-for="item in listSuratMasuk"
@@ -150,7 +150,7 @@ export default {
     const processingInputRequest = ref(false);
 
     const formData = reactive({
-      is_suratmasuk: "",
+      is_suratmasuk: true,
       no_suratmasuk: "",
       tenggat_waktu: "",
       no_disposisi: "",
@@ -296,5 +296,15 @@ export default {
 .no-result {
   margin-top: 30px;
   margin-bottom: 80px;
+}
+
+.input-no-surat{
+    width: 49%;
+}
+
+@media only screen and (max-width: 992px) {
+    .input-no-surat{
+    width: 100%;
+}
 }
 </style>

@@ -83,7 +83,7 @@
                   :loading="processingForm"
                   @click="handleSubmitForm"
                 >
-                  Submit
+                  Simpan
                 </el-button>
               </el-col>
             </el-row>

@@ -479,7 +479,7 @@ export default {
     function initData() {
       if (!_.isEmpty(props.detailData)) {
         let data = props.detailData;
-        console.log("data from server", data);
+        console.log("data from server", data,new Date(data.tenggat_waktu), data.tenggat_waktu);
         formData.id = data.id;
         formData.is_suratmasuk = data.is_suratmasuk;
         formData.no_suratmasuk = data.no_suratmasuk;

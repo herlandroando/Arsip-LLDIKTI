@@ -26,7 +26,10 @@
           <el-table-column type="expand">
             <template #default="scope">
               <p><b>Sifat Surat:</b> {{ scope.row.sifat }}</p>
-              <p><b>Tanggal Surat:</b> {{ scope.row.tanggal_surat }}</p>
+              <p>
+                <b>Tanggal Surat:</b>
+                {{ dateToString(scope.row.tanggal_surat, false) }}
+              </p>
               <p><b>Bagian:</b> {{ scope.row.asal_surat }}</p>
               <p>
                 <b>Pembuat: </b>
@@ -36,7 +39,14 @@
               </p>
             </template>
           </el-table-column>
-          <el-table-column label="No. Surat" width="130" prop="no_surat"> </el-table-column>
+          <el-table-column label="No. Surat" width="130" prop="no_surat">
+            <template #default="scope">
+              {{ scope.row.no_surat }}
+              <!-- <el-tag v-if="scope.row.is_retensi" type="warning"
+                >Retensi</el-tag
+              > -->
+            </template>
+          </el-table-column>
           <el-table-column label="Perihal" prop="perihal"> </el-table-column>
         </el-table>
         <p v-if="loadingTableMobile">Mohon Menunggu...</p>
@@ -124,6 +134,9 @@
                       timeStyle: "short",
                     })
                   }}
+                  <!-- <el-tag v-if="scope.row.is_retensi" type="warning"
+                    >Retensi</el-tag
+                  >-->
                 </template>
               </el-table-column>
               <el-table-column
@@ -269,6 +282,7 @@ import {
   defaultFilter,
   initializationFilter,
 } from "@shared/Filter/Helper";
+import { dateToString } from "@shared/HelperFunction";
 import axios from "axios";
 
 export default {

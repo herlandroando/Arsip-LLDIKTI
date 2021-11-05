@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Recycle;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Toast;
+use App\Models\PengaturanUmum;
 use App\Models\SuratKeluar;
 use App\Traits\HasGetFilterList;
 use App\Traits\HasManageableTableQuery;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SendController extends Controller
 {
@@ -49,8 +51,12 @@ class SendController extends Controller
 
     public function queryIndex($inertia_request = true)
     {
+        // $retensi        = PengaturanUmum::getSetting("retensi");
+        // $retensi        = now()->subYears($retensi);
         $search         = request()->query("search");
-        $surat_keluar   = SuratKeluar::query()->onlyTrashed();
+
+        $surat_keluar   = SuratKeluar::query()->onlyTrashed();//->orWhere("created_at", "<", $retensi);
+        // ->selectRaw("*, CASE when created_at < ? then 1 when created_at >= ? then 0 end as is_retensi",[$retensi,$retensi])
         // dd($surat_masuk);
         if (!empty($search)) {
             $surat_keluar->orWhere("asal_surat", "like", "%$search%")->orWhere("no_surat", "like", "%$search%")->orWhere("perihal", "like", "%$search%");
@@ -90,6 +96,7 @@ class SendController extends Controller
                     "perihal"       => $item->perihal,
                     "tanggal_surat" => $item->tanggal_surat,
                     "pembuat"       => $item->nama_pembuat,
+                    // "is_retensi"    => $item->is_retensi == 1 ? true : false,
                 ];
             });
             $this->setData("tableData", $data);
@@ -134,6 +141,7 @@ class SendController extends Controller
                 "perihal"       => $item->perihal,
                 "tanggal_surat" => $item->tanggal_surat,
                 "pembuat"       => $item->nama_pembuat,
+                // "is_retensi"    => $item->is_retensi ?? 0,
             ];
         });
         $result["result"] = $data;

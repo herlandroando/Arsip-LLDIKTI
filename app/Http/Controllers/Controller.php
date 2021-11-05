@@ -50,6 +50,12 @@ class Controller extends BaseController
                 "advance" => ["index" => "4-4", "label" => "Pengaturan Lanjutan", "url" => "setting.advance.index"],
             ]
         ],
+        // "manual" => [
+        //     "index" => "5", "icon" => "el-icon-info-filled", "permission" => [], "label" => "Bantuan", "has_child" => true, "childs" => [
+        //         "program" => ["index" => "4-1", "label" => "Manual Program", "url" => ""],
+        //         "about" => ["index" => "4-2", "label" => "Tentang Aplikasi", "url" => "setting.permission.index"],
+        //     ]
+        // ],
     ];
 
     private $limitPagination = 10;

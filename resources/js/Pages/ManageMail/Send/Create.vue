@@ -126,7 +126,7 @@
                     type="primary"
                     :disabled="processingForm"
                     @click="handleSubmitForm"
-                    >Submit</el-button
+                    >Simpan</el-button
                   >
                   <!-- <el-button @click="resetForm('ruleForm')">Reset</el-button> -->
                 </el-form-item>

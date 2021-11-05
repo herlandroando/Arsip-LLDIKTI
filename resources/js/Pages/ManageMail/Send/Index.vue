@@ -7,7 +7,7 @@
     <!-- For MOBILE - START -->
     <!-- <el-space v-if="useMq().current === 'xs'" wrap :size="16"> -->
     <template v-if="useMq().current === 'xs'">
-      <el-row class="text-center" style="margin-bottom:20px">
+      <el-row class="text-center" style="margin-bottom: 20px">
         <el-button
           v-if="permission.w_suratkeluar"
           @click="handleAddMail"
@@ -35,7 +35,10 @@
           <el-table-column type="expand">
             <template #default="scope">
               <p><b>Sifat Surat:</b> {{ scope.row.sifat }}</p>
-              <p><b>Tanggal Surat:</b> {{ dateToString(scope.row.tanggal_surat,false) }}</p>
+              <p>
+                <b>Tanggal Surat:</b>
+                {{ dateToString(scope.row.tanggal_surat, false) }}
+              </p>
               <p><b>Bagian:</b> {{ scope.row.asal_surat }}</p>
               <p>
                 <b>Pembuat: </b>
@@ -181,7 +184,11 @@
                   >
                   <template v-if="canDelete(scope.row)">
                     <el-popconfirm
-                      title="Apakah anda yakin menghapus surat ini?"
+                      :title="
+                        !deleteNotPermanent
+                          ? 'Apakah anda yakin menghapus surat ini? (Surat akan terhapus selamanya!)'
+                          : 'Apakah anda yakin menghapus surat ini?'
+                      "
                       confirmButtonText="Iya"
                       cancelButtonText="Tidak"
                       @confirm="handleDeleteMail(scope.row.id)"
@@ -238,25 +245,30 @@
     </template>
     <el-dialog title="Aksi" v-model="actionDialogVisible" width="80%" center>
       <el-space :fill="true" alignment="center" style="width: 100%">
-        <el-button style="width: 100%" @click="handleDetailTable()"
+        <el-button style="width: 100%"
+          type="primary"
+         @click="handleDetailTable()"
           >Lihat Detail</el-button
         >
         <template v-if="canDelete()">
           <el-popconfirm
-            title="Apakah anda yakin menghapus surat ini?"
+            :title="
+              !deleteNotPermanent
+                ? 'Apakah anda yakin menghapus surat ini? (Surat akan terhapus selamanya!)'
+                : 'Apakah anda yakin menghapus surat ini?'
+            "
             confirmButtonText="Iya"
             cancelButtonText="Tidak"
             @confirm="handleDeleteMail()"
           >
             <template #reference>
-              <el-button style="width: 100%">Hapus</el-button>
+              <el-button type="danger" style="width: 100%">Hapus</el-button>
             </template>
           </el-popconfirm>
         </template>
         <el-button
           style="width: 100%"
           @click="actionDialogVisible = false"
-          type="danger"
           >Tutup</el-button
         >
       </el-space>
@@ -274,7 +286,7 @@ import {
 } from "@shared/InertiaConfig.js";
 
 import { Failed, DeleteFilled, List } from "@element-plus/icons";
-import {dateToString} from "@shared/HelperFunction"
+import { dateToString } from "@shared/HelperFunction";
 import Layout from "@shared/Layout";
 import { reactive, ref } from "@vue/reactivity";
 import { computed, inject } from "@vue/runtime-core";
@@ -286,7 +298,6 @@ import {
   assignFilter,
   defaultFilter,
   initializationFilter,
-
 } from "@shared/Filter/Helper";
 import axios from "axios";
 
@@ -311,6 +322,7 @@ export default {
     },
     _pagination: { type: Object, default: () => null },
     isAvailable: { type: Boolean, default: () => false },
+    deleteNotPermanent: { type: Boolean, default: () => true },
   },
   setup(props) {
     initializationView(props);
@@ -328,19 +340,25 @@ export default {
     });
     const permission = getPermission(props);
     const canDelete = (row = false) => {
-      if (permission.d_surat) {
-        return true;
-      }
-      if (row === false) {
-        if (
-          permission.d_miliksurat &&
-          actionIdPembuatSelected.value == props._user.id
-        ) {
+      if (!props.deleteNotPermanent) {
+        if (permission.dp_surat) {
           return true;
         }
       } else {
-        if (permission.d_miliksurat && row.id_pembuat == props._user.id) {
+        if (permission.d_surat) {
           return true;
+        }
+        if (row === false) {
+          if (
+            permission.d_miliksurat &&
+            actionIdPembuatSelected.value == props._user.id
+          ) {
+            return true;
+          }
+        } else {
+          if (permission.d_miliksurat && row.id_pembuat == props._user.id) {
+            return true;
+          }
         }
       }
       return false;

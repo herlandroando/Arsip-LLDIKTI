@@ -28,7 +28,7 @@
               <p><b>Jabatan:</b> {{ scope.row.jabatan }}</p>
             </template>
           </el-table-column>
-          <el-table-column width="250" label="NIP" prop="nip">
+          <el-table-column width="180" label="NIP" prop="nip">
           </el-table-column>
           <el-table-column label="Nama" prop="nama"> </el-table-column>
         </el-table>
@@ -322,6 +322,7 @@ export default {
     function handleDeleteUser(id = "", username = "") {
       if (id === "") {
         id = actionIdSelected.value;
+        username = actionUsernameSelected.value;
       }
       actionDialogVisible.value = false;
       Inertia.delete(
@@ -331,6 +332,7 @@ export default {
     function handleDetailTable(id = "", username = "") {
       if (id === "") {
         id = actionIdSelected.value;
+        username = actionUsernameSelected.value;
       }
       actionDialogVisible.value = false;
       Inertia.get(

@@ -41,12 +41,7 @@
             <slot></slot>
             <!-- </div> -->
           </el-main>
-          <el-footer
-            height="40px"
-            class="footer-container"
-            style="background-color: #6d6d64"
-            >Footer</el-footer
-          >
+          <el-footer height="40px" class="footer-container"><small>© SIPAS LLDIKTI Wilayah XIV Papua - Papua Barat 2021</small></el-footer>
         </el-container>
       </el-container>
     </el-container>
@@ -140,7 +135,7 @@ export default {
     // }
 
     Inertia.on("success", () => {
-    //   console.log(mq.mdMinus, mq);
+      //   console.log(mq.mdMinus, mq);
       if (mq.mdMinus) {
         if (stateOpenSidebar.value) {
           body.style.overflowY = "hidden";
@@ -211,7 +206,12 @@ body {
   max-height: 85vh;
 }
 .footer-container {
-  min-height: 5vh;
+  min-height: 7vh;
+  background-color: #a1a1a1;
+  color: #fff;
+  text-align: center;
+  padding-top:10px;
+  font-weight: lighter;
 }
 .header-container {
   position: relative;
@@ -287,6 +287,10 @@ body {
 .height-100 {
   height: 100%;
 }
+.el-table__cell.el-table__expanded-cell{
+    padding:10px 15px
+}
+
 @media only screen and (max-width: 768px) {
   .content-container {
     max-height: none;

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Toast;
 use App\Http\Requests\StoreSuratMasukRequest;
 use App\Models\DokumenSuratMasuk;
+use App\Models\PengaturanUmum;
 use App\Models\SuratMasuk;
 use App\Traits\HasManageableTableQuery;
 use App\Traits\HasGetFilterList;
@@ -58,8 +59,11 @@ class InboxController extends Controller
 
     public function queryIndex($inertia_request = true)
     {
+        // $retensi        = PengaturanUmum::getSetting("retensi");
+        // $retensi        = now()->subYears($retensi);
         $search         = request()->query("search");
         $surat_masuk    = SuratMasuk::query();
+        // $surat_masuk    = $surat_masuk->where("created_at", ">=", $retensi);
         // dd($surat_masuk);
         if (!empty($search)) {
             $surat_masuk->orWhere($this->table_name . ".asal_surat", "like", "%$search%")->orWhere($this->table_name . ".no_surat", "like", "%$search%")->orWhere($this->table_name . ".perihal", "like", "%$search%");
@@ -105,11 +109,12 @@ class InboxController extends Controller
                     "sifat"         => $item->sifatSurat->nama,
                     "asal_surat"    => $item->asal_surat,
                     "perihal"       => $item->perihal,
-                    "tanggal_surat" => $item->tanggal_surat,
+                    "tanggal_surat" => Carbon::parse($item->tanggal_surat)->toString(),
                     "no_agenda"     => $item->no_agenda,
                 ];
             });
             $this->setData("tableData", $data);
+            $this->setData("deleteNotPermanent", PengaturanUmum::getSetting("delete_mail_not_permanent"));
             $this->setData("isAvailable", true);
         } else {
             $this->setData("isAvailable", false);
@@ -150,7 +155,7 @@ class InboxController extends Controller
                 "sifat"         => $item->sifatSurat->nama,
                 "asal_surat"    => $item->asal_surat,
                 "perihal"       => $item->perihal,
-                "tanggal_surat" => $item->tanggal_surat,
+                "tanggal_surat" => Carbon::parse($item->tanggal_surat)->toString(),
                 "no_agenda"     => $item->no_agenda,
             ];
         });
@@ -197,7 +202,7 @@ class InboxController extends Controller
             "no_surat" => "required|string|max:100",
             "no_agenda" => "required|string|max:100",
             "asal_surat" => "required|string|max:500",
-            "isi_ringkas" => "required|string|max:500",
+            "isi_ringkas" => "nullable|string|max:500",
         ]);
         if ($validator->fails()) {
             $toast = Toast::error("Gagal", "Terjadi kesalahan format pada data form yang dimasukkan.");
@@ -263,7 +268,7 @@ class InboxController extends Controller
             "id"                => $surat_masuk->id,
             "id_pembuat"        => $surat_masuk->id_pembuat,
             "perihal"           => $surat_masuk->perihal,
-            "tanggal_surat"     => $surat_masuk->tanggal_surat,
+            "tanggal_surat"     => Carbon::parse($surat_masuk->tanggal_surat)->toString(),
             "no_surat"          => $surat_masuk->no_surat,
             "asal_surat"        => $surat_masuk->asal_surat,
             "isi_ringkas"       => $surat_masuk->isi_ringkas,
@@ -288,9 +293,9 @@ class InboxController extends Controller
                 ];
             }),
             "pembuat"           => $surat_masuk->user->username ?? "Akun Terhapus",
-            "dibuat_tanggal"    => $surat_masuk->created_at,
+            "dibuat_tanggal" => Carbon::parse($surat_masuk->created_at)->toString(),
         ];
-
+        $this->setData("deleteNotPermanent", PengaturanUmum::getSetting("delete_mail_not_permanent"));
         $this->setTitle("Detail Surat Masuk", true);
         $this->setData("detailData", $data);
         return $this->runInertia("ManageMail/Inbox/Show");
@@ -330,7 +335,7 @@ class InboxController extends Controller
             "no_surat" => "required|string|max:100",
             "no_agenda" => "required|string|max:100",
             "asal_surat" => "required|string|max:500",
-            "isi_ringkas" => "required|string|max:500",
+            "isi_ringkas" => "nullable|string|max:500",
         ]);
         if ($validator->fails()) {
             $toast = Toast::error("Gagal", "Terjadi kesalahan format pada data form yang dimasukkan.");
@@ -364,13 +369,24 @@ class InboxController extends Controller
      */
     public function destroy(SuratMasuk $surat_masuk)
     {
-        $valid_user_deleted = request()->user()->jabatan->ijin->d_surat || (request()->user()->jabatan->ijin->d_miliksurat && request()->user()->id == $surat_masuk->id_pembuat);
-        if (!$valid_user_deleted) {
-            $toast = Toast::error("Gagal", "Anda tidak diperbolehkan melakukan tindakan ini.");
-            return $this->redirectInertia(route("manage.inbox.index"), $toast);
-        }
+
         // dd($surat_masuk, "test");
-        $surat_masuk->delete();
+        $is_delete_permanent = !PengaturanUmum::getSetting("delete_mail_not_permanent");
+        if ($is_delete_permanent) {
+            $valid_user_deleted = request()->user()->jabatan->ijin->dp_surat;
+            if (!$valid_user_deleted) {
+                $toast = Toast::error("Gagal", "Anda tidak diperbolehkan melakukan tindakan ini.");
+                return $this->redirectInertia(route("manage.inbox.index"), $toast);
+            }
+            $surat_masuk->forceDelete();
+        } else {
+            $valid_user_deleted = request()->user()->jabatan->ijin->d_surat || (request()->user()->jabatan->ijin->d_miliksurat && request()->user()->id == $surat_masuk->id_pembuat);
+            if (!$valid_user_deleted) {
+                $toast = Toast::error("Gagal", "Anda tidak diperbolehkan melakukan tindakan ini.");
+                return $this->redirectInertia(route("manage.inbox.index"), $toast);
+            }
+            $surat_masuk->delete();
+        }
         $toast = Toast::success("Hapus Surat Masuk", "Penghapusan surat masuk berhasil!");
         return $this->redirectInertia(route("manage.inbox.index"), $toast);
     }

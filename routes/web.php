@@ -64,6 +64,7 @@ Route::middleware("permission:inbox.r")->prefix("manage")->name('manage.')->grou
         Route::get('/option', "ManageMail\DisposisiController@filterOptions")->name("option");
         Route::get('/create', "ManageMail\DisposisiController@create")->name("create")->middleware("permission:disposisi.w");
         Route::post('/create', "ManageMail\DisposisiController@store")->name("store")->middleware("permission:disposisi.w");
+        Route::get('/json', "ManageMail\DisposisiController@jsonIndex")->name("index.json");
         Route::get('/', "ManageMail\DisposisiController@index")->name("index");
         Route::post('/{disposisi}/activity', "ManageMail\DisposisiController@createActivity")->name("activity.create");
         Route::put('/{disposisi}/status', "ManageMail\DisposisiController@updateStatus")->name("status.update");
@@ -81,11 +82,13 @@ Route::prefix("report")->name("report.")->middleware("permission:report.r")->gro
 
 Route::prefix("recycle")->name("recycle.")->middleware("permission:recycle.r")->group(function () {
     Route::prefix("inbox")->name('inbox.')->group(function () {
+        Route::get('/json', "Recycle\InboxController@jsonIndex")->name("index.json");
         Route::get("/", "Recycle\InboxController@index")->name("index");
         Route::put("/{surat_masuk}", "Recycle\InboxController@restore")->name("restore");
         Route::delete("/{surat_masuk}", "Recycle\InboxController@destroy")->name("destroy");
     });
     Route::prefix("send")->name('send.')->group(function () {
+        Route::get('/json', "Recycle\SendController@jsonIndex")->name("index.json");
         Route::get("/", "Recycle\SendController@index")->name("index");
         Route::put("/{surat_keluar}", "Recycle\SendController@restore")->name("restore");
         Route::delete("/{surat_keluar}", "Recycle\SendController@destroy")->name("destroy");
@@ -125,6 +128,7 @@ Route::prefix("setting")->name("setting.")->group(function () {
         });
         Route::prefix("advance")->name("advance.")->group(function () {
             Route::get('/', "Setting\AdvanceController@index")->name("index");
+            Route::put('/', "Setting\AdvanceController@update")->name("update");
         });
     });
 });

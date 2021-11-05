@@ -22,22 +22,23 @@ class AdvanceController extends Controller
 
     public function update(Request $request)
     {
-        $this->setTitle("Kelola Pengaturan Lanjut");
         $input = $request->input();
         $validator = Validator::make($input, [
-            "retensi" => "required|numeric|min:2|max:100",
-            "autoDeleteRetensiMail" => "required|boolean",
+            // "retensi" => "required|numeric|min:2|max:100",
+            // "autoDeleteRetensiMail" => "required|boolean", "retensi", "autoDeleteRetensiMail",
             "deleteMailNotPermanent" => "required|boolean",
         ]);
         if ($validator->fails()) {
             $toast = Toast::error("Gagal", "Terjadi kesalahan format atau duplikasi pada data form yang dimasukkan.");
             return $this->redirectInertia(route("setting.advance.index"), $toast);
         }
-        $only = ["retensi", "autoDeleteRetensiMail", "deleteMailNotPermanent"];
+        $only = ["deleteMailNotPermanent" => "boolean"];
         DB::beginTransaction();
-        foreach ($only as $value) {
-            $key = Str::snake($value);
-            PengaturanUmum::setSetting($key, $input[$value]);
+        foreach ($only as $key => $value) {
+            $key_snake = Str::snake($key);
+            if ($value == 'boolean')
+                $input[$key] = $input[$key] ? 'true' : 'false';
+            PengaturanUmum::setSetting($key_snake, $input[$key]);
         }
         DB::commit();
         $toast = Toast::success("Sukses", "Berhasil ubah pengaturan!");

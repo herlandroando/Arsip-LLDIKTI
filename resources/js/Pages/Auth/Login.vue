@@ -34,7 +34,7 @@
           <el-col :xs="24" :sm="24" :md="16">
             <el-card shadow="hover" class="box-card">
               <h5>Login Untuk Masuk Aplikasi SIPAS</h5>
-              <el-form :model="form">
+              <el-form :model="form" label-position="top">
                 <el-form-item label="Username">
                   <el-input v-model="form.username"></el-input>
                 </el-form-item>

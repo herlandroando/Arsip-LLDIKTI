@@ -3,9 +3,9 @@
     <el-row :gutter="40">
       <el-col :span="24" :sm="24">
         <el-card class="box-card">
-          <el-form label-position="top" model="formData" ref="form">
+          <el-form label-position="top" :model="formData" ref="form">
             <el-row>
-              <el-col :span="24">
+              <!-- <el-col :span="24">
                 <el-form-item label="Filter Retensi Surat (Tahun)">
                   <el-input-number
                     v-model="formData.retensi"
@@ -21,7 +21,7 @@
                     >
                   </p>
                 </el-form-item>
-              </el-col>
+              </el-col> -->
               <el-col :span="24">
                 <el-form-item label="Hapus Surat ke Tempat Sampah">
                   <el-switch v-model="formData.deleteMailNotPermanent" />
@@ -42,7 +42,7 @@
                   </p>
                 </el-form-item>
               </el-col>
-              <el-col :span="24">
+              <!-- <el-col :span="24">
                 <el-form-item label="Retensi Surat ke Tempat Sampah">
                   <el-switch v-model="formData.deleteMailNotPermanent" />
                   <p class="info">
@@ -62,7 +62,7 @@
                     >
                   </p>
                 </el-form-item>
-              </el-col>
+              </el-col> -->
               <el-col :span="24">
                 <el-button
                   @click="handleSubmit"
@@ -87,11 +87,18 @@
 import { Link } from "@inertiajs/inertia-vue3";
 
 import { reactive, ref } from "@vue/reactivity";
-import { computed, inject, onMounted, watch } from "@vue/runtime-core";
+import {
+  computed,
+  inject,
+  onMounted,
+  onUpdated,
+  watch,
+} from "@vue/runtime-core";
 import { defaultProps, initializationView } from "@shared/InertiaConfig.js";
 import Layout from "@shared/Layout.vue";
 import _ from "lodash";
 import { Failed, Loading } from "@element-plus/icons";
+import { Inertia } from "@inertiajs/inertia";
 export default {
   components: { Layout, Failed, Link },
   props: {
@@ -108,9 +115,9 @@ export default {
     // const sifatSurat = reactive(inject("sifatSurat"));
 
     const formData = reactive({
-      retensi: 2,
+      //   retensi: 2,
       deleteMailNotPermanent: false,
-      autoDeleteRetensiMail: false,
+      //   autoDeleteRetensiMail: false,
     });
     const form = ref(null);
     const isDirty = ref(false);
@@ -118,31 +125,41 @@ export default {
     watch(
       () => _.cloneDeep(formData),
       (newVal, prevVal) => {
-        if (props.isSelectedAvailable) {
-          let data = props.data;
-          let changed = false;
+        let data = props.data;
+        let changed = false;
 
-          for (const key in newVal) {
-            //   console.log(newVal[key] != data[key], key);
-            if (newVal[key] != data[key]) changed = true;
-          }
-          console.log(isDirty.value, "Changed");
-          isDirty.value = changed;
-        }
+        changed =
+          newVal.deleteMailNotPermanent != data.delete_mail_not_permanent;
+        console.log(isDirty.value, "Changed", newVal, data);
+        isDirty.value = changed;
       }
     );
 
+    function handleSubmit() {
+      Inertia.put(route("setting.advance.update"), formData, {
+        preserveScroll: true,
+      });
+      isDirty.value = false;
+    }
+
+    function handleReset() {
+      formData.deleteMailNotPermanent = props.data.delete_mail_not_permanent;
+    }
+
+    onUpdated(() => {
+      formData.deleteMailNotPermanent = props.data.delete_mail_not_permanent;
+    });
     onMounted(() => {
       if (!_.isEmpty(props.data)) {
-        formData.retensi = props.data.retensi ?? 2;
+        // formData.retensi = props.data.retensi ?? 2;
         formData.deleteMailNotPermanent =
           props.data.deleteMailNotPermanent ?? true;
-        formData.autoDeleteRetensiMail =
-          props.data.autoDeleteRetensiMail ?? true;
+        // formData.autoDeleteRetensiMail =
+        //   props.data.autoDeleteRetensiMail ?? true;
       }
     });
 
-    return { form, formData, isDirty };
+    return { form, formData, isDirty, handleSubmit, handleReset };
   },
 };
 </script>

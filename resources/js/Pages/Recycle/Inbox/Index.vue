@@ -26,11 +26,15 @@
           <el-table-column type="expand">
             <template #default="scope">
               <p><b>Sifat Surat:</b> {{ scope.row.sifat }}</p>
-              <p><b>Tanggal Surat</b>: {{ scope.row.tanggal_surat }}</p>
+              <p><b>Tanggal Surat</b>: {{ dateToString(scope.row.tanggal_surat, false) }}</p>
               <p><b>Asal Surat:</b> {{ scope.row.asal_surat }}</p>
             </template>
           </el-table-column>
           <el-table-column width="130" label="No. Surat" prop="no_surat">
+            <template #default="scope">
+              {{ scope.row.no_surat }}
+              <!-- <el-tag v-if="scope.row.is_retensi" type="warning">Retensi</el-tag> -->
+            </template>
           </el-table-column>
           <el-table-column label="Perihal" prop="perihal"> </el-table-column>
         </el-table>
@@ -119,6 +123,7 @@
                       timeStyle: "short",
                     })
                   }}
+                  <!-- <el-tag v-if="scope.row.is_retensi" type="warning">Retensi</el-tag> -->
                 </template>
               </el-table-column>
               <el-table-column
@@ -252,6 +257,9 @@ import {
   initializationFilter,
 } from "@shared/Filter/Helper";
 import axios from "axios";
+import{
+    dateToString,
+}from "@shared/HelperFunction"
 
 export default {
   components: {
@@ -461,6 +469,7 @@ export default {
       limitTableMobile,
       loadingTableMobile,
       useMq,
+      dateToString,
       query,
     };
   },

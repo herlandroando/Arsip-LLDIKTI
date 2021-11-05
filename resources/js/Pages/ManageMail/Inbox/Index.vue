@@ -169,7 +169,11 @@
                   >
                   <template v-if="canDelete(scope.row)">
                     <el-popconfirm
-                      title="Apakah anda yakin menghapus surat ini?"
+                      :title="
+                        !deleteNotPermanent
+                          ? 'Apakah anda yakin menghapus surat ini? (Surat akan terhapus selamanya!)'
+                          : 'Apakah anda yakin menghapus surat ini?'
+                      "
                       confirmButtonText="Iya"
                       cancelButtonText="Tidak"
                       @confirm="handleDeleteMail(scope.row.id)"
@@ -234,7 +238,11 @@
         >
         <template v-if="canDelete(false)">
           <el-popconfirm
-            title="Apakah anda yakin menghapus surat ini?"
+            :title="
+              !deleteNotPermanent
+                ? 'Apakah anda yakin menghapus surat ini? (Surat akan terhapus selamanya!)'
+                : 'Apakah anda yakin menghapus surat ini?'
+            "
             confirmButtonText="Iya"
             cancelButtonText="Tidak"
             @confirm="handleDeleteMail()"
@@ -298,6 +306,7 @@ export default {
     },
     _pagination: { type: Object, default: () => null },
     isAvailable: { type: Boolean, default: () => false },
+    deleteNotPermanent: { type: Boolean, default: () => true },
   },
   setup(props) {
     initializationView(props);
@@ -315,20 +324,25 @@ export default {
     });
     const permission = getPermission(props);
     const canDelete = (row = false) => {
-      if (permission.d_surat) {
-        return true;
-      }
-
-      if (row === false) {
-        if (
-          permission.d_miliksurat &&
-          actionIdPembuatSelected.value == props._user.id
-        ) {
+      if (!props.deleteNotPermanent) {
+        if (permission.dp_surat) {
           return true;
         }
       } else {
-        if (permission.d_miliksurat && row.id_pembuat == props._user.id) {
+        if (permission.d_surat) {
           return true;
+        }
+        if (row === false) {
+          if (
+            permission.d_miliksurat &&
+            actionIdPembuatSelected.value == props._user.id
+          ) {
+            return true;
+          }
+        } else {
+          if (permission.d_miliksurat && row.id_pembuat == props._user.id) {
+            return true;
+          }
         }
       }
       return false;
