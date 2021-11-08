@@ -206,7 +206,7 @@ class DisposisiController extends Controller
                 "nama" => $nama,
                 "jabatan" => $jabatan,
                 "idPembuat" => $item->id_pembuat,
-                "username" => $item->pembuat->username,
+                "username" => $item->pembuat->username ?? "",
                 "keterangan" => $item->keterangan,
                 "isStatus" => $item->is_update_status,
                 "isMe" => $item->id_pembuat === request()->user()->id ?? false,

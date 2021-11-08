@@ -43,12 +43,12 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="24" :sm="12">
+              <el-col :span="24" :md="12">
                 <el-form-item prop="no_disposisi" label="No. Disposisi">
                   <el-input v-model="formData.no_disposisi"></el-input>
                 </el-form-item>
               </el-col>
-              <el-col :span="24" :sm="12">
+              <el-col :span="24" :md="12">
                 <el-form-item prop="tenggat_waktu" label="Tenggat Waktu">
                   <el-date-picker
                     class="width-100"
@@ -60,7 +60,7 @@
                   ></el-date-picker>
                 </el-form-item>
               </el-col>
-              <el-col :span="24" :sm="12">
+              <el-col :span="24" :md="12">
                 <el-form-item prop="tujuan" label="Tujuan Disposisi">
                   <el-select
                     v-model="formData.tujuan"

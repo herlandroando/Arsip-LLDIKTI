@@ -20,7 +20,7 @@
             </el-form-item>
             <!-- </el-col> -->
             <el-row :gutter="20">
-              <el-col :span="24" :sm="12">
+              <el-col :span="24" :md="12">
                 <el-form-item label="Asal Surat" prop="asal_surat">
                   <el-input
                     v-model="formData.asal_surat"
@@ -28,7 +28,7 @@
                   ></el-input>
                 </el-form-item>
               </el-col>
-              <el-col :span="24" :sm="12">
+              <el-col :span="24" :md="12">
                 <el-form-item label="Tanggal Surat" prop="tanggal_surat">
                   <el-date-picker
                     class="width-100"
@@ -39,7 +39,7 @@
                   ></el-date-picker>
                 </el-form-item>
               </el-col>
-              <el-col :span="24" :sm="12">
+              <el-col :span="24" :md="12">
                 <el-form-item label="Sifat Surat" prop="id_sifat">
                   <el-select
                     v-model="formData.id_sifat"
@@ -56,8 +56,8 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="24" :sm="12"> </el-col>
-              <el-col :span="24" :sm="12">
+              <el-col :span="24" :md="12"> </el-col>
+              <el-col :span="24" :md="12">
                 <el-form-item label="No. Surat" prop="no_surat">
                   <el-input
                     placeholder="Isi nomor surat"
@@ -65,7 +65,7 @@
                   ></el-input>
                 </el-form-item>
               </el-col>
-              <el-col :span="24" :sm="12">
+              <el-col :span="24" :md="12">
                 <el-form-item label="No. Agenda" prop="no_agenda">
                   <el-input
                     placeholder="Isi nomor agenda"

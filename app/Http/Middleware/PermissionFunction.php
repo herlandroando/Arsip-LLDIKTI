@@ -2,21 +2,10 @@
 
 namespace App\Http\Middleware;
 
-use App\Enums\ExceptionType;
-use App\Enums\UserRoleEnum;
-use App\Exceptions\AuthException;
-use App\Exceptions\RenderException;
-use App\Exceptions\ResourceException;
-use App\Exceptions\RouteNameException;
 use App\Http\Controllers\Toast;
-use App\Models\AdminPermission;
-use App\Models\UserRole;
 use Closure;
 use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route as FacadesRoute;
-
-use function Psy\debug;
 
 class PermissionFunction
 {

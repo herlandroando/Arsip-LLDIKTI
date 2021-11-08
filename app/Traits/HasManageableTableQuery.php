@@ -164,6 +164,7 @@ trait HasManageableTableQuery
     {
         $sort_query = request()->query("sort", "");
         if (empty($sort_query)) {
+            $query = $query->orderBy("$this->table_name.created_at", "desc");
             return;
         }
         if (empty($this->sort_available)) {
@@ -176,6 +177,7 @@ trait HasManageableTableQuery
         // dd($order,$query_key,$sort_query,$sort_keys);
 
         if (!in_array($query_key, $sort_keys)) {
+            $query = $query->orderBy("$this->table_name.created_at", "desc");
             return;
         }
 

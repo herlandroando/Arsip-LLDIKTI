@@ -23,6 +23,7 @@ class HomeController extends Controller
         $disposisi_aktif = Disposisi::active(10)->get();
         $surat_masuk_baru = SuratMasuk::newMail(10)->get();
         $surat_keluar_baru = SuratKeluar::newMail(10)->get();
+        // dd($surat_keluar_baru);
         $this->setData("disposisiAktif", $disposisi_aktif->isNotEmpty() ? $disposisi_aktif : []);
         $this->setData("suratMasukBaru", $surat_masuk_baru->isNotEmpty() ? $surat_masuk_baru : []);
         $this->setData("suratKeluarBaru", $surat_keluar_baru->isNotEmpty() ? $surat_keluar_baru : []);

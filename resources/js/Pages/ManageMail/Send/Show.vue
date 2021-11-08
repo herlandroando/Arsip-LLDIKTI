@@ -70,13 +70,13 @@
                 class="creator-check"
                 :class="{ active: !isCreatorMe }"
                 :span="24"
-                :sm="12"
+                :md="12"
               >
                 <el-checkbox v-model="isCreatorMe" :disabled="!editMode"
                   >Saya pembuat suratnya.</el-checkbox
                 >
               </el-col>
-              <el-col :span="24" :sm="12">
+              <el-col :span="24" :md="12">
                 <el-form-item
                   v-if="!isCreatorMe && editMode"
                   label="Nama Pembuat Surat"
@@ -103,7 +103,7 @@
                 </el-form-item>
               </el-col>
               <!-- Line -->
-              <el-col :span="24" :sm="12">
+              <el-col :span="24" :md="12">
                 <el-form-item
                   v-if="editMode"
                   label="Asal Surat"
@@ -131,7 +131,7 @@
                   ></el-input>
                 </el-form-item>
               </el-col>
-              <el-col :span="24" :sm="12">
+              <el-col :span="24" :md="12">
                 <el-form-item label="Tujuan" prop="tujuan">
                   <el-input
                     v-model="formData.tujuan"
@@ -141,7 +141,7 @@
                 </el-form-item>
               </el-col>
               <!-- Line -->
-              <el-col :span="24" :sm="12">
+              <el-col :span="24" :md="12">
                 <el-form-item label="Tanggal Surat" prop="tanggal_surat">
                   <el-date-picker
                     class="width-100"
@@ -153,9 +153,9 @@
                   ></el-date-picker>
                 </el-form-item>
               </el-col>
-              <el-col :span="24" :sm="12"> </el-col>
+              <el-col :span="24" :md="12"> </el-col>
               <!-- Line -->
-              <el-col :span="24" :sm="12">
+              <el-col :span="24" :md="12">
                 <el-form-item
                   v-if="editMode"
                   label="Sifat Surat"
@@ -183,7 +183,7 @@
                   ></el-input>
                 </el-form-item>
               </el-col>
-              <el-col :span="24" :sm="12">
+              <el-col :span="24" :md="12">
                 <el-form-item label="No. Surat" prop="no_surat">
                   <el-input
                     placeholder="Isi nomor surat"
@@ -252,6 +252,7 @@
                 v-if="classificationFileType(file.tipe) !== 'Tidak Diketahui'"
                 :href="file.url + '?open=1'"
                 target="_blank"
+                style="margin-left:15px"
               >
                 <el-button class="button" type="text">Buka</el-button></a
               >
@@ -263,7 +264,7 @@
           <el-upload
             class="upload-demo"
             :action="
-              routes('manage.send.upload.file', { surat_masuk: formData.id })
+              routes('manage.send.upload.file', { surat_keluar: formData.id })
             "
             :on-error="handleErrorUpload"
             :on-remove="handleRemove"
@@ -479,7 +480,7 @@ export default {
       console.log(is_valid);
       if (is_valid) {
         Inertia.put(
-          route("manage.send.update", { surat_masuk: formData.id }),
+          route("manage.send.update", { surat_keluar: formData.id }),
           formData,
           {
             preserveState: true,
@@ -536,7 +537,7 @@ export default {
         return false;
       }
       axios
-        .post(route("manage.send.delete.file", { surat_masuk: formData.id }), {
+        .post(route("manage.send.delete.file", { surat_keluar: formData.id }), {
           id: file.id,
         })
         .then((response) => {
@@ -580,7 +581,7 @@ export default {
     function handleDialogWarnConfirm() {
       dialogWarnVisible.value = false;
       Inertia.delete(
-        route("manage.send.destroy", { surat_masuk: formData.id })
+        route("manage.send.destroy", { surat_keluar: formData.id })
       );
     }
 

@@ -336,7 +336,7 @@ export default {
               {
                 id: "c" + val.id,
                 label: "Perihal",
-                value: val.no_surat,
+                value: val.perihal,
               },
               {
                 id: "d" + val.id,
@@ -360,7 +360,7 @@ export default {
               {
                 id: "b" + val.id,
                 label: "Perihal",
-                value: val.no_surat,
+                value: val.perihal,
               },
               {
                 id: "c" + val.id,

@@ -66,7 +66,7 @@
             </el-form-item>
             <!-- </el-col> -->
             <el-row :gutter="20">
-              <el-col :span="24" :sm="12">
+              <el-col :span="24" :md="12">
                 <el-form-item prop="asal_surat" label="Asal Surat">
                   <el-input
                     :readonly="!editMode"
@@ -74,7 +74,7 @@
                   ></el-input>
                 </el-form-item>
               </el-col>
-              <el-col :span="24" :sm="12">
+              <el-col :span="24" :md="12">
                 <el-form-item prop="tanggal_surat" label="Tanggal Surat">
                   <el-date-picker
                     :readonly="!editMode"
@@ -86,7 +86,7 @@
                   ></el-date-picker>
                 </el-form-item>
               </el-col>
-              <el-col :span="24" :sm="12">
+              <el-col :span="24" :md="12">
                 <el-form-item v-if="!editMode" label="Sifat Surat">
                   <el-input
                     :readonly="!editMode"
@@ -109,8 +109,8 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="24" :sm="12"> </el-col>
-              <el-col :span="24" :sm="12">
+              <el-col :span="24" :md="12"> </el-col>
+              <el-col :span="24" :md="12">
                 <el-form-item prop="no_surat" label="No. Surat">
                   <el-input
                     :readonly="!editMode"
@@ -118,7 +118,7 @@
                   ></el-input>
                 </el-form-item>
               </el-col>
-              <el-col :span="24" :sm="12">
+              <el-col :span="24" :md="12">
                 <el-form-item label="No. Agenda" prop="no_agenda">
                   <el-input
                     :readonly="!editMode"
@@ -138,7 +138,7 @@
                   />
                 </el-form-item>
               </el-col>
-              <el-col :span="24" :sm="12"
+              <el-col :span="24" :md="12"
                 ><el-form-item label="Dimasukkan oleh">
                   <el-input
                     :readonly="!editMode"
@@ -146,7 +146,7 @@
                     v-model="optionalData.pembuat"
                   ></el-input> </el-form-item
               ></el-col>
-              <el-col :span="24" :sm="12"
+              <el-col :span="24" :md="12"
                 ><el-form-item label="Dimasukkan tanggal">
                   <el-date-picker
                     :readonly="!editMode"

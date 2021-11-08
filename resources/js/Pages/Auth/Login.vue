@@ -84,8 +84,8 @@ export default {
 
     // const logo = ref(Path.logo);
     const form = useForm({
-      username: "collins.dion",
-      password: "password",
+      username: "",
+      password: "",
       remember: false,
     });
     const processXhr = ref(false);

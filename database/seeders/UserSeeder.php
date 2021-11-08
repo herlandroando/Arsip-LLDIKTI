@@ -15,7 +15,7 @@ class UserSeeder extends Seeder
     public function run()
     {
         DB::table('pengguna')->insert([
-            'username' => 'collins.dion',
+            'username' => 'admin.sipas',
             'password' => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
             // 'remember_token' => \Illuminate\Support\Str::random(10),
             "nama" => "Admin Tertinggi",
@@ -24,28 +24,28 @@ class UserSeeder extends Seeder
             "id_jabatan" => 1,
         ]);
         DB::table('pengguna')->insert([
-            'username' => 'korni.andal',
+            'username' => 'sekretaris.sipas',
             'password' => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
             // 'remember_token' => \Illuminate\Support\Str::random(10),
-            "nama" => "Korni Andal",
+            "nama" => "Sekretaris SIPAS",
             "nip" => "123456789012345671",
             "no_telpon" => "081234567890",
             "id_jabatan" => 2,
         ]);
         DB::table('pengguna')->insert([
-            'username' => 'red.andal',
+            'username' => 'tu.sipas',
             'password' => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
             // 'remember_token' => \Illuminate\Support\Str::random(10),
-            "nama" => "Red Andal",
+            "nama" => "TU SIPAS",
             "nip" => "123456789012345622",
             "no_telpon" => "081234567890",
             "id_jabatan" => 3,
         ]);
         DB::table('pengguna')->insert([
-            'username' => 'momo.andal',
+            'username' => 'pimpinan.sipas',
             'password' => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
             // 'remember_token' => \Illuminate\Support\Str::random(10),
-            "nama" => "Momo Andal",
+            "nama" => "Pimpinan SIPAS",
             "nip" => "123456789012315622",
             "no_telpon" => "081234567890",
             "id_jabatan" => 4,

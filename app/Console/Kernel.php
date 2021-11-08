@@ -32,15 +32,32 @@ class Kernel extends ConsoleKernel
     {
         $schedule->call(function () {
             // try {
-                //code...
-                $this->reportPdf("sm_report", "daily");
-                $this->reportPdf("sm_report", "monthly");
-                $this->reportPdf("sk_report", "daily");
-                $this->reportPdf("sk_report", "monthly");
+            //code...
+            $this->reportPdf("sm_report", "daily");
+            $this->reportPdf("sm_report", "monthly");
+            $this->reportPdf("sk_report", "daily");
+            $this->reportPdf("sk_report", "monthly");
             // } catch (\Throwable $th) {
-                // Storage::disk('local')->put('error.txt', $th);
+            // Storage::disk('local')->put('error.txt', $th);
             // }
-        })->everyMinute()->timezone("Asia/Jayapura");
+        })->daily()->timezone("Asia/Jayapura");
+
+        $schedule->call(function () {
+            $now = now();
+            $result = DB::table('disposisi')->where("expired_at", "<", $now)->whereNotIn("status", ["Berakhir", "Selesai"])->get(["id"]);
+            if ($result->isNotEmpty()) {
+                $ids = $result->pluck("id");
+                foreach ($ids as $key => $value) {
+                    DB::table("detail_disposisi")->insert([
+                        "is_update_status" => 1,
+                        "keterangan" => "Berakhir",
+                        "id_disposisi" => $value,
+                        "created_at" => $now,
+                    ]);
+                }
+                DB::table('disposisi')->whereIn("id", $ids)->update(["status" => "Berakhir"]);
+            }
+        })->everyMinute();
     }
 
 
@@ -63,48 +80,48 @@ class Kernel extends ConsoleKernel
         $routine_title = ["daily" => "Harian", "monthly" => "Bulanan"];
         $data = [];
         try {
-        //code...
+            //code...
 
-        if ($routine == "monthly") {
-            view()->share(["report_metadata" => [
-                "duration" => Carbon::now()->subDay()->startOfMonth()->toDayDateTimeString() . " - " . Carbon::now()->subDay()->endOfMonth()->toDayDateTimeString(),
-                "type" => $type_title[$type],
-                "routine_type" => $routine_title[$routine],
-            ]]);
-            $date_collected = DB::table($type_surat[$type])->selectRaw("date(local_created_at) as tanggal_buat")
-                ->groupBy("tanggal_buat")->orderBy('tanggal_buat', 'asc')->get()->pluck("tanggal_buat");
-            if ($date_collected->isEmpty()) {
-                view()->share("report_data", []);
-            } else {
-                foreach ($date_collected as $key => $value) {
-                    $start = Carbon::parse($value)->startOfDay();
-                    $end = Carbon::parse($value)->endOfDay();
-                    array_push($data,[
-                        "duration_date" => $start->toDayDateTimeString() . " - " . $end->toDayDateTimeString(),
-                        "data" => $type == "sm_report" ? $this->suratMasukQuery([$start, $end]) : $this->suratKeluarQuery([$start, $end]),
-                    ]);
+            if ($routine == "monthly") {
+                view()->share(["report_metadata" => [
+                    "duration" => Carbon::now()->subDay()->startOfMonth()->toDayDateTimeString() . " - " . Carbon::now()->subDay()->endOfMonth()->toDayDateTimeString(),
+                    "type" => $type_title[$type],
+                    "routine_type" => $routine_title[$routine],
+                ]]);
+                $date_collected = DB::table($type_surat[$type])->selectRaw("date(local_created_at) as tanggal_buat")
+                    ->groupBy("tanggal_buat")->orderBy('tanggal_buat', 'asc')->get()->pluck("tanggal_buat");
+                if ($date_collected->isEmpty()) {
+                    view()->share("report_data", []);
+                } else {
+                    foreach ($date_collected as $key => $value) {
+                        $start = Carbon::parse($value)->startOfDay();
+                        $end = Carbon::parse($value)->endOfDay();
+                        array_push($data, [
+                            "duration_date" => $start->toDayDateTimeString() . " - " . $end->toDayDateTimeString(),
+                            "data" => $type == "sm_report" ? $this->suratMasukQuery([$start, $end]) : $this->suratKeluarQuery([$start, $end]),
+                        ]);
+                    }
+                    view()->share("report_data", $data);
                 }
+            } else {
+                view()->share(["report_metadata" => [
+                    "duration" => Carbon::now()->subDay()->startOfDay()->toDayDateTimeString() . " - " . Carbon::now()->subDay()->endOfDay()->toDayDateTimeString(),
+                    "type" => $type_title[$type],
+                    "routine_type" => $routine_title[$routine],
+                ]]);
+                $start = Carbon::now()->subDay()->startOfDay();
+                $end = Carbon::now()->subDay()->endOfDay();
+                $data = $type == "sm_report" ? $this->suratMasukQuery([$start, $end]) : $this->suratKeluarQuery([$start, $end]);
                 view()->share("report_data", $data);
             }
-        } else {
-            view()->share(["report_metadata" => [
-                "duration" => Carbon::now()->subDay()->startOfDay()->toDayDateTimeString() . " - " . Carbon::now()->subDay()->endOfDay()->toDayDateTimeString(),
-                "type" => $type_title[$type],
-                "routine_type" => $routine_title[$routine],
-            ]]);
-            $start = Carbon::now()->subDay()->startOfDay();
-            $end = Carbon::now()->subDay()->endOfDay();
-            $data = $type == "sm_report" ? $this->suratMasukQuery([$start, $end]) : $this->suratKeluarQuery([$start, $end]);
-            view()->share("report_data", $data);
-        }
 
-        view()->share(["title" => $type_title[$type]]);
+            view()->share(["title" => $type_title[$type]]);
 
-        view()->share(["report_type" => $type]);
-        view()->share(["routine_type" => $routine]);
-        view()->share(["report_created_at" => Carbon::now()->timezone("Asia/Jayapura")->toDayDateTimeString()]);
-        $filename = "$type-$routine-" . Carbon::now()->timestamp . ".pdf";
-        $pdf = PDF::loadView("reports.main")->setPaper('a4', 'landscape')->save(storage_path("app/reports/$filename"));
+            view()->share(["report_type" => $type]);
+            view()->share(["routine_type" => $routine]);
+            view()->share(["report_created_at" => Carbon::now()->timezone("Asia/Jayapura")->toDayDateTimeString()]);
+            $filename = "$type-$routine-" . Carbon::now()->timestamp . ".pdf";
+            $pdf = PDF::loadView("reports.main")->setPaper('a4', 'landscape')->save(storage_path("app/reports/$filename"));
         } catch (\Throwable $th) {
             ob_start();
             var_dump($start, $end, $data, $routine, $type);

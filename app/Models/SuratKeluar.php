@@ -45,8 +45,9 @@ class SuratKeluar extends Model
     }
 
     public function scopeNewMail($query,$limit=10){
-        $start = Carbon::now()->timezone("Asia/Jayapura")->startOfDay();
-        $end = Carbon::now()->timezone("Asia/Jayapura")->endOfDay();
+        $start = Carbon::now()->startOfDay()->timezone("Asia/Jayapura");
+        $end = Carbon::now()->endOfDay()->timezone("Asia/Jayapura");
+        // dd($start,$end);
         $query=$query->orderBy("created_at","desc")->whereBetween("created_at",[$start,$end]);
         if ($limit > 0) {
             return $query->limit($limit);

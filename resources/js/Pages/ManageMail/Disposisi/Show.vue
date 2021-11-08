@@ -204,7 +204,7 @@
                   ></el-input>
                 </el-form-item>
               </el-col>
-              <el-col :span="24" :sm="12">
+              <el-col :span="24" :md="12">
                 <el-form-item prop="tujuan" label="Tujuan Disposisi">
                   <el-input
                     readonly
@@ -213,7 +213,7 @@
                   ></el-input>
                 </el-form-item>
               </el-col>
-              <el-col :span="24" :sm="12">
+              <el-col :span="24" :md="12">
                 <el-form-item prop="tenggat_waktu" label="Tenggat Waktu">
                   <el-date-picker
                     :readonly="!editMode"
@@ -237,7 +237,7 @@
                   />
                 </el-form-item>
               </el-col>
-              <el-col :span="24" :sm="12">
+              <el-col :span="24" :md="12">
                 <el-form-item label="Status Disposisi">
                   <el-input
                     readonly
@@ -246,7 +246,7 @@
                   ></el-input>
                 </el-form-item>
               </el-col>
-              <el-col :span="24" :sm="12"
+              <el-col :span="24" :md="12"
                 ><el-form-item label="Dibuat oleh">
                   <el-input
                     readonly
@@ -254,7 +254,7 @@
                     v-model="optionalData.pengirim"
                   ></el-input> </el-form-item
               ></el-col>
-              <el-col :span="24" :sm="12"
+              <el-col :span="24" :md="12"
                 ><el-form-item label="Dibuat Tanggal">
                   <el-date-picker
                     readonly
@@ -265,7 +265,7 @@
                     v-model="optionalData.tanggal_buat"
                   ></el-date-picker> </el-form-item
               ></el-col>
-              <el-col :span="24" :sm="12"
+              <el-col :span="24" :md="12"
                 ><el-form-item label="Perubahan Terakhir">
                   <el-date-picker
                     readonly

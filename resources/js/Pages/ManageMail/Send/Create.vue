@@ -23,13 +23,13 @@
                 class="creator-check"
                 :class="{ active: !isCreatorMe }"
                 :span="24"
-                :sm="12"
+                :md="12"
               >
                 <el-checkbox v-model="isCreatorMe"
                   >Saya pembuat suratnya.</el-checkbox
                 >
               </el-col>
-              <el-col :span="24" :sm="12">
+              <el-col :span="24" :md="12">
                 <el-form-item
                   v-if="!isCreatorMe"
                   label="Pembuat Surat"
@@ -45,7 +45,7 @@
                 </el-form-item>
               </el-col>
               <!-- Line -->
-              <el-col :span="24" :sm="12">
+              <el-col :span="24" :md="12">
                 <el-form-item label="Asal Surat" prop="asal_surat">
                   <el-select
                     v-model="formData.asal_surat"
@@ -62,7 +62,7 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="24" :sm="12">
+              <el-col :span="24" :md="12">
                 <el-form-item label="Tujuan" prop="tujuan">
                   <el-input
                     v-model="formData.tujuan"
@@ -71,7 +71,7 @@
                 </el-form-item>
               </el-col>
               <!-- Line -->
-              <el-col :span="24" :sm="12">
+              <el-col :span="24" :md="12">
                 <el-form-item label="Tanggal Surat" prop="tanggal_surat">
                   <el-date-picker
                     class="width-100"
@@ -82,9 +82,9 @@
                   ></el-date-picker>
                 </el-form-item>
               </el-col>
-              <el-col :span="24" :sm="12"> </el-col>
+              <el-col :span="24" :md="12"> </el-col>
               <!-- Line -->
-              <el-col :span="24" :sm="12">
+              <el-col :span="24" :md="12">
                 <el-form-item label="Sifat Surat" prop="id_sifat">
                   <el-select
                     v-model="formData.id_sifat"
@@ -101,7 +101,7 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="24" :sm="12">
+              <el-col :span="24" :md="12">
                 <el-form-item label="No. Surat" prop="no_surat">
                   <el-input
                     placeholder="Isi nomor surat"
@@ -140,7 +140,7 @@
           <h4>Dokumen Surat</h4>
           <el-upload
             class="upload-demo"
-            :action="routes('manage.inbox.upload.temp')"
+            :action="routes('manage.send.upload.temp')"
             :on-preview="handlePreview"
             :on-error="handleErrorUpload"
             :on-remove="handleRemove"
@@ -359,7 +359,7 @@ export default {
         return false;
       }
       axios
-        .post(route("manage.inbox.delete.temp"), { id: file.id })
+        .post(route("manage.send.delete.temp"), { id: file.id })
         .then((response) => {
           console.log("success remove", response);
           ElNotification({

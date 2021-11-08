@@ -38,7 +38,7 @@ class Controller extends BaseController
         "report_mail" => [
             "index" => "2", "icon" => "el-icon-document", "permission" => ["r_laporan"],  "label" => "Laporan Arsip", "has_child" => false, "url" => "report.index"
         ],
-        "recycle" => ["index" => "3", "icon" => "el-icon-delete", "permission" => ["dp_surat"],  "label" => "Tempat Sampah", "has_child" => true, "childs" =>[
+        "recycle" => ["index" => "3", "icon" => "el-icon-delete", "permission" => ["dp_surat"],  "label" => "Tempat Sampah", "has_child" => true, "childs" => [
             "inbox" => ["index" => "3-1", "label" => "Surat Masuk", "url" => "recycle.inbox.index"],
             "send" => ["index" => "3-2", "label" => "Surat Keluar", "url" => "recycle.send.index"],
         ]],
@@ -232,7 +232,7 @@ class Controller extends BaseController
             "currentPage"   => 0,
         ];
         $pagination["total"]        = $entity->total();
-        $pagination["lastPage"]     = $entity->lastPage();
+        $pagination["lastPage"]     = $entity->lastPage() > 10 ? 10 : $entity->lastPage();
         $pagination["perPage"]      = $entity->perPage();
         $pagination["currentPage"]  = $entity->currentPage();
         $pagination = $this->sended_data->put("_pagination", $pagination);
