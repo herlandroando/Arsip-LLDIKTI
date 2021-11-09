@@ -93,10 +93,12 @@
           </el-menu-item>
         </template>
       </template>
+      <a href="https://drive.google.com/file/d/11LMhcELNzzsjlSaao3CLWzZBjCIMYZpx/view?usp=sharing" target="_blank">
       <el-menu-item index="5">
         <i class="el-icon-info"></i>
         <template #title> Manual Program </template>
       </el-menu-item>
+      </a>
       <el-menu-item
         v-if="useMq().mdMinus"
         class="text-error"
