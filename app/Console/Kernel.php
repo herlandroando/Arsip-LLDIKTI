@@ -34,13 +34,16 @@ class Kernel extends ConsoleKernel
             // try {
             //code...
             $this->reportPdf("sm_report", "daily");
-            $this->reportPdf("sm_report", "monthly");
             $this->reportPdf("sk_report", "daily");
-            $this->reportPdf("sk_report", "monthly");
             // } catch (\Throwable $th) {
             // Storage::disk('local')->put('error.txt', $th);
             // }
         })->daily()->timezone("Asia/Jayapura");
+
+        $schedule->call(function () {
+            $this->reportPdf("sm_report", "monthly");
+            $this->reportPdf("sk_report", "monthly");
+        })->monthly()->timezone("Asia/Jayapura");
 
         $schedule->call(function () {
             $now = now();
