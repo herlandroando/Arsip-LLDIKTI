@@ -113,7 +113,7 @@ class SendController extends Controller
             $this->setData("isAvailable", false);
         }
 
-        $this->setTitle("Surat Keluar");
+        $this->setTitle("Kelola Surat - Surat Keluar");
 
         return $this->runInertia("ManageMail/Send/Index");
     }

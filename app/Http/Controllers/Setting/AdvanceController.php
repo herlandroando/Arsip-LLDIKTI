@@ -14,7 +14,7 @@ class AdvanceController extends Controller
 {
     public function index()
     {
-        $this->setTitle("Kelola Pengaturan Lanjut");
+        $this->setTitle("Pengaturan Lanjutan");
         $data = PengaturanUmum::getCollection(true);
         $this->setData("data", $data);
         return $this->runInertia("Setting/Advance/Index");

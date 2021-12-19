@@ -14,7 +14,7 @@ class PermissionController extends Controller
 
     public function queryAll()
     {
-        $this->setTitle("Kelola Ijin");
+        $this->setTitle("Kelola Hak Akses");
         $permission = Ijin::all();
         if ($permission->isNotEmpty()) {
             $data = $permission->map(function ($item, $key) {

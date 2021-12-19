@@ -122,7 +122,7 @@ class DisposisiController extends Controller
             $this->setData("isAvailable", false);
         }
 
-        $this->setTitle("Kelola Disposisi");
+        $this->setTitle("Kelola Surat - Disposisi");
 
         return $this->runInertia("ManageMail/Disposisi/Index");
     }

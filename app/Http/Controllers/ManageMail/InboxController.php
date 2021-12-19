@@ -120,7 +120,7 @@ class InboxController extends Controller
             $this->setData("isAvailable", false);
         }
         // dd($data);
-        $this->setTitle("Surat Masuk");
+        $this->setTitle("Kelola Surat - Surat Masuk");
 
         return $this->runInertia("ManageMail/Inbox/Index");
     }

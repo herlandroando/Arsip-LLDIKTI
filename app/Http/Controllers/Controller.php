@@ -44,9 +44,9 @@ class Controller extends BaseController
         ]],
         "setting" => [
             "index" => "4", "icon" => "el-icon-setting", "permission" => ["admin"], "label" => "Pengaturan", "has_child" => true, "childs" => [
-                "users" => ["index" => "4-1", "label" => "Data Pengguna", "url" => "setting.users.index"],
-                "permission" => ["index" => "4-2", "label" => "Perizinan", "url" => "setting.permission.index"],
-                "jabatan" => ["index" => "4-3", "label" => "Jabatan", "url" => "setting.jabatan.index"],
+                "users" => ["index" => "4-1", "label" => "Kelola Pengguna", "url" => "setting.users.index"],
+                "permission" => ["index" => "4-2", "label" => "Kelola Hak Akses", "url" => "setting.permission.index"],
+                "jabatan" => ["index" => "4-3", "label" => "Kelola Jabatan", "url" => "setting.jabatan.index"],
                 "advance" => ["index" => "4-4", "label" => "Pengaturan Lanjutan", "url" => "setting.advance.index"],
             ]
         ],
