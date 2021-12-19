@@ -95,10 +95,7 @@ export function dateToString(format = "", withTime = true) {
     if (withTime) {
         option["timeStyle"] = "short"
     }
-    return date.toLocaleString("id-ID", {
-        dateStyle: "full",
-        timeStyle: "short",
-    })
+    return date.toLocaleString("id-ID", option)
 }
 
 export function getXSRF() {

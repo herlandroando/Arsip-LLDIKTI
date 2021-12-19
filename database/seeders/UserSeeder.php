@@ -50,6 +50,6 @@ class UserSeeder extends Seeder
             "no_telpon" => "081234567890",
             "id_jabatan" => 4,
         ]);
-        \App\Models\User::factory(4)->create();
+        // \App\Models\User::factory(4)->create();
     }
 }

@@ -162,40 +162,42 @@
           <div style="margin-bottom: 60px"></div>
 
           <template v-if="newActivitySurat.data.length > 0">
-            <el-row
-              class="data-child-container"
-              v-for="data in newActivitySurat.data"
-              :key="data.id"
-              @click="handleClickMail(data.id)"
-            >
-              <table style="width: 100%; table-layout: fixed; overflow: hidden">
-                <tr v-for="v in data.value" :key="v.id">
-                  <th
-                    style="
-                      width: 120px;
-                      vertical-align: top;
-                      white-space: pre-wrap;
-                    "
-                  >
-                    {{ v.label }}
-                  </th>
-                  <td
-                    style="
-                      text-align: center;
-                      width: 30px;
-                      vertical-align: top;
-                      white-space: pre-wrap;
-                    "
-                  >
-                    :
-                  </td>
-                  <td style="vertical-align: top; white-space: pre-wrap">
-                    {{ v.value }}
-                  </td>
-                </tr>
-              </table>
-            </el-row>
-            <hr />
+            <template v-for="data in newActivitySurat.data" :key="data.id">
+              <el-row
+                class="data-child-container"
+                @click="handleClickMail(data.id)"
+              >
+                <table
+                  style="width: 100%; table-layout: fixed; overflow: hidden"
+                >
+                  <tr v-for="v in data.value" :key="v.id">
+                    <th
+                      style="
+                        width: 120px;
+                        vertical-align: top;
+                        white-space: pre-wrap;
+                      "
+                    >
+                      {{ v.label }}
+                    </th>
+                    <td
+                      style="
+                        text-align: center;
+                        width: 30px;
+                        vertical-align: top;
+                        white-space: pre-wrap;
+                      "
+                    >
+                      :
+                    </td>
+                    <td style="vertical-align: top; white-space: pre-wrap">
+                      {{ v.value }}
+                    </td>
+                  </tr>
+                </table>
+              </el-row>
+              <hr />
+            </template>
           </template>
           <el-result
             v-else
@@ -341,7 +343,7 @@ export default {
               {
                 id: "d" + val.id,
                 label: "Tanggal Surat",
-                value: dateToString(val.tanggal_surat),
+                value: dateToString(val.tanggal_surat, false),
               },
               {
                 id: "e" + val.id,
@@ -365,7 +367,7 @@ export default {
               {
                 id: "c" + val.id,
                 label: "Tanggal Surat",
-                value: dateToString(val.tanggal_surat),
+                value: dateToString(val.tanggal_surat, false),
               },
               {
                 id: "d" + val.id,

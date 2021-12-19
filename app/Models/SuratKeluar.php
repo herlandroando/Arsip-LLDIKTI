@@ -20,6 +20,9 @@ class SuratKeluar extends Model
         'updated_at',
         'deleted_at',
     ];
+    protected $casts = [
+        "tanggal_surat" => "datetime",
+    ];
 
     protected static function booted()
     {

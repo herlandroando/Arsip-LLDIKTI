@@ -23,6 +23,7 @@ class SuratMasukFactory extends Factory
     public function definition()
     {
         return [
+            'id_pembuat' => $this->faker->numberBetween(1, 4),
             'id_sifat'=>$this->faker->numberBetween(1,3),
             'tanggal_surat'=> $this->faker->dateTimeBetween('-5 months', 'now'),
             'no_agenda'=> $this->faker->numerify('###/###/###'),

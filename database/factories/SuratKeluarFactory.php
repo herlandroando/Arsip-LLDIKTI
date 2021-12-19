@@ -25,6 +25,7 @@ class SuratKeluarFactory extends Factory
     {
         // $this->jabatan = Jabatan::all()->pluck("id")->toArray();
         return [
+            'id_pembuat' => $this->faker->numberBetween(1, 4),
             'id_sifat' => $this->faker->numberBetween(1, 3),
             'tanggal_surat' => $this->faker->dateTimeBetween('-5 months', 'now'),
             'no_surat' => $this->faker->numerify('###/###/###'),
