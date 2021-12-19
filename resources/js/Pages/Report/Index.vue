@@ -1,7 +1,5 @@
 <template>
-  <layout
-    @end-scroll="handleInfiniteScroll"
-  >
+  <layout @end-scroll="handleInfiniteScroll">
     <!-- For MOBILE - START -->
     <!-- <el-space v-if="useMq().current === 'xs'" wrap :size="16"> -->
     <template v-if="useMq().current === 'xs'">
@@ -26,9 +24,11 @@
               <p><b>Rutinitas Waktu:</b> {{ scope.row.rutinitas }}</p>
             </template>
           </el-table-column>
-          <el-table-column label="Tipe" prop="tipe">
-          </el-table-column>
-          <el-table-column label="Tanggal Buat" prop="tanggal_buat">
+          <el-table-column label="Tipe" prop="tipe"> </el-table-column>
+          <el-table-column label="Tanggal Buat" prop="tanggal_buat" width="200">
+            <template #default="scope">
+              {{ dateToString(scope.row.tanggal_buat, true) }}
+            </template>
           </el-table-column>
         </el-table>
         <p v-if="loadingTableMobile">Mohon Menunggu...</p>
@@ -107,10 +107,18 @@
                 prop="tanggal_buat"
                 sortable="custom"
                 label="Tanggal Buat"
-                width="220"
+                width="250"
               >
+                <template #default="scope">
+                  {{ dateToString(scope.row.tanggal_buat, true) }}
+                </template>
               </el-table-column>
-              <el-table-column width="300" prop="tipe" sortable="custom" label="Tipe">
+              <el-table-column
+                width="250"
+                prop="tipe"
+                sortable="custom"
+                label="Tipe"
+              >
               </el-table-column>
               <el-table-column
                 prop="rutinitas"
@@ -185,6 +193,7 @@
 <script>
 import { Inertia } from "@inertiajs/inertia";
 import { defaultProps, initializationView } from "@shared/InertiaConfig.js";
+import { dateToString } from "@shared/HelperFunction";
 
 import { Failed, DeleteFilled, List } from "@element-plus/icons";
 
@@ -353,6 +362,7 @@ export default {
     }
 
     return {
+      dateToString,
       handlePageClick,
       handleFilterSubmitted,
       handleFilterDeleted,
