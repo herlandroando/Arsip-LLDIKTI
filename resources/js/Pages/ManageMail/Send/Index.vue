@@ -3,6 +3,7 @@
     :hasHeaderSearch="true"
     @end-scroll="handleInfiniteScroll"
     @handleHeaderSearch="handleMobileSearch"
+    :search="search"
   >
     <!-- For MOBILE - START -->
     <!-- <el-space v-if="useMq().current === 'xs'" wrap :size="16"> -->

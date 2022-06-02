@@ -523,7 +523,7 @@ class InboxController extends Controller
         }
 
         $open = $request->query("open", 0);
-
+//LUPAKAN
         $dokumen = DB::table('dokumen_sm')->where("id", $id)->where("alias", $name)->first();
         if (empty($dokumen)) {
             return $this->throwOrRedirect("File is not found.", 404);

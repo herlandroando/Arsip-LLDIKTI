@@ -67,7 +67,7 @@ class PermissionController extends Controller
         }
         $permission->delete();
         $toast = Toast::success("Hapus Berhasil", "Penghapusan ijin berhasil!");
-        return $this->redirectInertia(route("setting.permission.show", ["permission" => $permission->id]), $toast);
+        return $this->redirectInertia(route("setting.permission.index"), $toast);
     }
 
     public function store(Request $request)

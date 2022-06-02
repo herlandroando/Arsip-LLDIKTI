@@ -11,6 +11,7 @@
           :hasHeaderSearch="hasHeaderSearch"
           @handleSidebar="handleSidebar"
           @handleSearch="handleSearch"
+          :search="search"
         />
       </el-header>
       <el-container class="height-100" direction="horizontal">
@@ -37,35 +38,16 @@
                 <h4>{{ title }}</h4>
               </template>
             </el-space>
-            <!-- <div :class="{'main-scrollable':true,'disable':stateOpenSidebar}"> -->
             <slot></slot>
-            <!-- </div> -->
           </el-main>
           <el-footer height="40px" class="footer-container"><small>© SIPAS LLDIKTI Wilayah XIV Papua - Papua Barat 2021</small></el-footer>
         </el-container>
       </el-container>
     </el-container>
   </div>
-  <!-- <el-dialog
-    :title="dialogWarn.title"
-    v-model="dialogWarn.visible"
-    width="30%"
-    center
-  >
-    <span>{{ dialogWarn.description }}</span>
-    <template #footer>
-      <span class="dialog-footer">
-        <el-button @click="handleDialogWarnCancel">Tidak</el-button>
-        <el-button type="primary" @click="handleDialogWarnConfirm"
-          >Iya</el-button
-        >
-      </span>
-    </template>
-  </el-dialog> -->
 </template>
 
 <script>
-// import Sidebar from "./Sidebar.vue";
 import {
   onMounted,
   watch,
@@ -92,50 +74,24 @@ export default {
       type: Boolean,
       default: false,
     },
+    search: {
+      type: String,
+      default: "",
+    },
   },
   emits: ["handleHeaderSearch", "endScroll"],
   setup(props, { emit }) {
     const body = document.querySelector("body");
     const stateOpenSidebar = ref(false);
     const sidebarContents = inject("sidebars", null);
-    // const breadcrumb = inject("breadcrumb", null);
     const indexActive = inject("indexActive", "0");
     const title = inject("title", "Title_Not_Defined");
     const showTitle = inject("showTitle", true);
     const backNav = inject("backNav", null);
     const container = ref(null);
     const mq = useMq();
-    // const dialogWarn = reactive({
-    //   visible: false,
-    //   title: "Dialog",
-    //   description: "Apakah anda yakin dengan tindakan yang anda lakukan?",
-    //   clickCancelCallback: (fn = () => {}) => {
-    //     return fn();
-    //   },
-    //   clickConfirmCallback: (fn = (fn = () => {})) => {
-    //     return fn();
-    //   },
-    // });
-    // console.log({
-    //   backNav: backNav.value,
-    //   title: title.value,
-    //   indexActive: indexActive.value,
-    // });
-    // watch(stateOpenSidebar, (value) => {
-    //   if (value) document.body.classList.add("isolation");
-    //   else document.body.classList.remove("isolation");
-    // });
-
-    // function handleDialogWarnCancel() {
-    //   dialogWarn.visible = false;
-    //   dialogWarn.clickCancelCallback();
-    // }
-    // function handleDialogWarnConfirm() {
-    //   dialogWarn.clickCancelCallback();
-    // }
 
     Inertia.on("success", () => {
-      //   console.log(mq.mdMinus, mq);
       if (mq.mdMinus) {
         if (stateOpenSidebar.value) {
           body.style.overflowY = "hidden";
@@ -143,17 +99,7 @@ export default {
           body.style.overflowY = "auto";
         }
       }
-      //   toast(props._toast);
     });
-
-    // function toast(toast) {
-    //   if (toast instanceof Object)
-    //     ElNotification({
-    //       type: toast.type,
-    //       title: toast.title,
-    //       message: toast.message,
-    //     });
-    // }
 
     function handleSidebar(state) {
       stateOpenSidebar.value = state;
@@ -173,9 +119,6 @@ export default {
 
     return {
       indexActive,
-      //   handleDialogWarnCancel,
-      //   handleDialogWarnConfirm,
-      //   dialogWarn,
       title,
       showTitle,
       backNav,

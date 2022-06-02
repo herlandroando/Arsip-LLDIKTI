@@ -69,13 +69,6 @@
                     </el-option>
                   </el-select>
                 </el-form-item>
-                <!-- <el-form-item v-if="!editMode" label="Jabatan">
-                  <el-input
-                    :readonly="!editMode"
-                    v-model="optionalData.jabatan"
-                  ></el-input>
-                </el-form-item>
-                -->
               </el-col>
               <el-col>
                 <el-button
